@@ -234,24 +234,48 @@
 											</div>
 										{/if}
 										
-										<!-- Embedded quote post with potential video -->
+										<!-- Embedded quote post with media -->
 										{#if parsedPost.post.embed?.record?.record}
-											<div class="mt-3 border border-gray-200 rounded-lg p-3 bg-gray-50">
-												<div class="flex items-center space-x-2 mb-2">
+											{@const quotedPost = parsedPost.post.embed.record.record}
+											<div class="mt-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
+												<!-- Quote post header -->
+												<div class="flex items-center space-x-2 mb-3">
 													<img 
-														src={parsedPost.post.embed.record.record.author?.avatar || 'https://via.placeholder.com/24x24/e5e7eb/9ca3af?text=?'} 
-														alt="{parsedPost.post.embed.record.record.author?.displayName || parsedPost.post.embed.record.record.author?.handle || 'User'}'s avatar"
-														class="w-6 h-6 rounded-full object-cover"
+														src={quotedPost.author?.avatar || 'https://via.placeholder.com/32x32/e5e7eb/9ca3af?text=?'} 
+														alt="{quotedPost.author?.displayName || quotedPost.author?.handle || 'User'}'s avatar"
+														class="w-8 h-8 rounded-full object-cover"
 													/>
-													<span class="font-medium text-gray-700 text-sm">{parsedPost.post.embed.record.record.author?.displayName || parsedPost.post.embed.record.record.author?.handle || 'Unknown User'}</span>
-													<span class="text-gray-500 text-sm">@{parsedPost.post.embed.record.record.author?.handle || 'unknown'}</span>
+													<div>
+														<div class="flex items-center space-x-1">
+															<span class="font-semibold text-gray-800 text-sm">{quotedPost.author?.displayName || quotedPost.author?.handle || 'Unknown User'}</span>
+															<span class="text-gray-500 text-sm">@{quotedPost.author?.handle || 'unknown'}</span>
+														</div>
+														<span class="text-gray-500 text-xs">
+															{new Date(quotedPost.indexedAt || quotedPost.value?.createdAt || Date.now()).toLocaleDateString()}
+														</span>
+													</div>
 												</div>
-												<div class="text-gray-800 text-sm mb-2">{parsedPost.post.embed.record.record.value?.text || ''}</div>
 												
-												<!-- Embedded video in quote post -->
-												{#if parsedPost.post.embed.record.record.embeds?.[0]?.$type === 'app.bsky.embed.video#view'}
-													{@const video = parsedPost.post.embed.record.record.embeds[0]}
-													<div class="relative rounded-lg overflow-hidden bg-black" style="aspect-ratio: {video.aspectRatio?.width || 16}/{video.aspectRatio?.height || 9}">
+												<!-- Quote post text -->
+												<div class="text-gray-800 text-sm mb-3">{quotedPost.value?.text || ''}</div>
+												
+												<!-- Quote post images (if any) -->
+												{#if quotedPost.value?.embed?.images}
+													<div class="mb-3 grid grid-cols-2 gap-2 max-w-md">
+														{#each quotedPost.value.embed.images as image}
+															<img 
+																src={image.thumb} 
+																alt={image.alt || 'Quoted post image'}
+																class="rounded-lg object-cover w-full h-32"
+															/>
+														{/each}
+													</div>
+												{/if}
+												
+												<!-- Quote post video (from embeds array) -->
+												{#if quotedPost.embeds?.[0]?.$type === 'app.bsky.embed.video#view'}
+													{@const video = quotedPost.embeds[0]}
+													<div class="mb-3 relative rounded-lg overflow-hidden bg-black" style="aspect-ratio: {video.aspectRatio?.width || 16}/{video.aspectRatio?.height || 9}">
 														<video 
 															controls 
 															poster={video.thumbnail}
@@ -259,19 +283,56 @@
 															preload="metadata"
 														>
 															<source src={video.playlist} type="application/x-mpegURL" />
-															<p class="text-white p-4">Your browser doesn't support this video format.</p>
+															<p class="text-white p-4 text-center">Your browser doesn't support this video format.</p>
 														</video>
 														<div class="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
-															Video
+															📹 Video
+														</div>
+														<!-- Video info overlay -->
+														<div class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+															{video.aspectRatio?.width}×{video.aspectRatio?.height}
+														</div>
+													</div>
+												{/if}
+												
+												<!-- Quote post video (from value.embed) -->
+												{#if quotedPost.value?.embed?.$type === 'app.bsky.embed.video' && quotedPost.embeds?.[0]?.$type === 'app.bsky.embed.video#view'}
+													{@const videoEmbed = quotedPost.value.embed}
+													{@const videoView = quotedPost.embeds[0]}
+													<div class="mb-3">
+														<div class="text-xs text-gray-600 mb-1">
+															Original embed: {videoEmbed.video?.mimeType || 'video/mp4'} 
+															({(videoEmbed.video?.size / 1024 / 1024).toFixed(1)}MB)
 														</div>
 													</div>
 												{/if}
 												
 												<!-- Engagement stats for embedded post -->
-												<div class="flex items-center space-x-4 mt-2 text-gray-500 text-xs">
-													<span>{parsedPost.post.embed.record.record.replyCount || 0} replies</span>
-													<span>{parsedPost.post.embed.record.record.repostCount || 0} reposts</span>
-													<span>{parsedPost.post.embed.record.record.likeCount || 0} likes</span>
+												<div class="flex items-center space-x-4 text-gray-500 text-xs border-t border-gray-300 pt-2">
+													<div class="flex items-center space-x-1">
+														<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+															<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+														</svg>
+														<span>{quotedPost.replyCount || 0}</span>
+													</div>
+													<div class="flex items-center space-x-1">
+														<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+															<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+														</svg>
+														<span>{quotedPost.repostCount || 0}</span>
+													</div>
+													<div class="flex items-center space-x-1">
+														<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+															<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+														</svg>
+														<span>{quotedPost.likeCount || 0}</span>
+													</div>
+													<div class="flex items-center space-x-1">
+														<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+															<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+														</svg>
+														<span>{quotedPost.quoteCount || 0} quotes</span>
+													</div>
 												</div>
 											</div>
 										{/if}
