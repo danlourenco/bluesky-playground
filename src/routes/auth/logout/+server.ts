@@ -1,7 +1,7 @@
 // Logout endpoint - clears the session
 import { redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { deleteSession } from '$lib/server/oauth';
+import { createOAuthClient } from '$lib/server/oauth';
 
 export const GET: RequestHandler = async ({ cookies }) => {
 	console.log('Logging out user...');
@@ -10,9 +10,17 @@ export const GET: RequestHandler = async ({ cookies }) => {
 	const sessionId = cookies.get('bsky_session');
 
 	if (sessionId) {
-		// Delete the session from our store
-		deleteSession(sessionId);
-		console.log(`Session ${sessionId} deleted`);
+		try {
+			// Create OAuth client to access session store
+			const client = await createOAuthClient();
+			
+			// Delete the session from the OAuth client's session store
+			await client.sessionStore.del(sessionId);
+			console.log(`Session ${sessionId} deleted from OAuth client store`);
+		} catch (error) {
+			console.error('Error deleting session from OAuth store:', error);
+			// Continue with logout even if session deletion fails
+		}
 	}
 
 	// Delete the cookie

@@ -45,9 +45,31 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
 					// Timeline requires specific scopes not available in basic OAuth
 					// Show what the error would be and what scope is needed
 					try {
-						apiData = await agent.getTimeline({ 
+						const timelineData = await agent.getTimeline({ 
 							limit: 10
 						});
+						
+						// Enrich posts with parent post data for replies
+						if (timelineData.data?.feed) {
+							for (const item of timelineData.data.feed) {
+								if (item.post.record?.reply?.parent?.uri) {
+									try {
+										// Fetch the parent post to display inline
+										const parentThread = await agent.getPostThread({
+											uri: item.post.record.reply.parent.uri,
+											depth: 0
+										});
+										if (parentThread.data?.thread?.post) {
+											item.parentPost = parentThread.data.thread.post;
+										}
+									} catch (parentError) {
+										console.log(`Could not fetch parent post: ${parentError}`);
+									}
+								}
+							}
+						}
+						
+						apiData = timelineData;
 					} catch (error: any) {
 						apiData = {
 							error: true,
@@ -62,10 +84,32 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
 				case 'author-feed':
 					// Get posts from a specific user (in this case, themselves)
 					try {
-						apiData = await agent.getAuthorFeed({ 
+						const authorFeedData = await agent.getAuthorFeed({ 
 							actor: sessionId,
 							limit: 10
 						});
+						
+						// Enrich posts with parent post data for replies
+						if (authorFeedData.data?.feed) {
+							for (const item of authorFeedData.data.feed) {
+								if (item.post.record?.reply?.parent?.uri) {
+									try {
+										// Fetch the parent post to display inline
+										const parentThread = await agent.getPostThread({
+											uri: item.post.record.reply.parent.uri,
+											depth: 0
+										});
+										if (parentThread.data?.thread?.post) {
+											item.parentPost = parentThread.data.thread.post;
+										}
+									} catch (parentError) {
+										console.log(`Could not fetch parent post: ${parentError}`);
+									}
+								}
+							}
+						}
+						
+						apiData = authorFeedData;
 					} catch (error: any) {
 						apiData = {
 							error: true,
@@ -117,10 +161,24 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
 				case 'following':
 					// Get list of users this person follows
 					try {
-						apiData = await agent.getFollows({ 
+						const followsData = await agent.getFollows({ 
 							actor: sessionId,
 							limit: 20
 						});
+						
+						// Also get profile data for total counts
+						const profileData = await agent.getProfile({ 
+							actor: sessionId
+						});
+						
+						// Attach profile info for true totals
+						followsData.profileTotals = {
+							followsCount: profileData.data.followsCount,
+							followersCount: profileData.data.followersCount,
+							postsCount: profileData.data.postsCount
+						};
+						
+						apiData = followsData;
 					} catch (error: any) {
 						apiData = {
 							error: true,
@@ -135,10 +193,24 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
 				case 'followers':
 					// Get list of users following this person
 					try {
-						apiData = await agent.getFollowers({ 
+						const followersData = await agent.getFollowers({ 
 							actor: sessionId,
 							limit: 20
 						});
+						
+						// Also get profile data for total counts
+						const profileData = await agent.getProfile({ 
+							actor: sessionId
+						});
+						
+						// Attach profile info for true totals
+						followersData.profileTotals = {
+							followsCount: profileData.data.followsCount,
+							followersCount: profileData.data.followersCount,
+							postsCount: profileData.data.postsCount
+						};
+						
+						apiData = followersData;
 					} catch (error: any) {
 						apiData = {
 							error: true,
