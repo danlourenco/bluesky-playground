@@ -42,38 +42,55 @@
 		console.log('Setting up video with playlist:', playlistUrl);
 		console.log('HLS available:', !!Hls, 'HLS supported:', Hls ? Hls.isSupported() : false);
 		
-		if (Hls && Hls.isSupported()) {
-			console.log('Using HLS.js for video playback');
-			const hls = new Hls({
-				debug: true,
-				enableWorker: false
-			});
-			
-			hls.loadSource(playlistUrl);
-			hls.attachMedia(videoElement);
-			
-			hls.on(Hls.Events.MANIFEST_PARSED, function () {
-				console.log('HLS manifest parsed, video ready to play');
-			});
-			
-			hls.on(Hls.Events.ERROR, function (event, data) {
-				console.error('HLS error:', event, data);
-			});
-			
-			return {
-				destroy() {
-					hls.destroy();
-				}
-			};
-		} else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-			// Native HLS support (Safari)
-			console.log('Using native HLS support');
-			videoElement.src = playlistUrl;
-		} else {
-			console.log('HLS not supported, setting source directly');
-			videoElement.src = playlistUrl;
+		// Wait a bit for HLS.js to be fully loaded
+		const initVideo = () => {
+			if (Hls && Hls.isSupported()) {
+				console.log('Using HLS.js for video playback');
+				const hls = new Hls({
+					debug: false,
+					enableWorker: false,
+					maxBufferLength: 10,
+					maxMaxBufferLength: 30
+				});
+				
+				hls.loadSource(playlistUrl);
+				hls.attachMedia(videoElement);
+				
+				hls.on(Hls.Events.MANIFEST_PARSED, function () {
+					console.log('HLS manifest parsed, video ready to play');
+				});
+				
+				hls.on(Hls.Events.ERROR, function (event, data) {
+					console.error('HLS error:', event, data);
+					if (data.fatal) {
+						console.log('Fatal HLS error, trying fallback');
+						videoElement.src = playlistUrl;
+					}
+				});
+				
+				return {
+					destroy() {
+						hls.destroy();
+					}
+				};
+			} else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+				// Native HLS support (Safari)
+				console.log('Using native HLS support');
+				videoElement.src = playlistUrl;
+			} else {
+				console.log('HLS not supported, setting source directly');
+				videoElement.src = playlistUrl;
+			}
+			return { destroy() {} };
+		};
+		
+		// If HLS isn't loaded yet, wait a bit
+		if (!Hls && typeof window !== 'undefined') {
+			setTimeout(initVideo, 500);
+			return { destroy() {} };
 		}
-		return { destroy() {} };
+		
+		return initVideo();
 	}
 
 	// Copy JSON to clipboard function
@@ -243,6 +260,27 @@
 								<!-- Video info overlay -->
 								<div class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
 									{video.aspectRatio?.width}×{video.aspectRatio?.height}
+								</div>
+							</div>
+						{/if}
+						
+						<!-- Quote post external link (from embeds array) -->
+						{#if quotedPost.embeds?.[0]?.$type === 'app.bsky.embed.external#view'}
+							{@const external = quotedPost.embeds[0].external}
+							<div class="mb-3 border border-gray-200 rounded-lg overflow-hidden">
+								<img 
+									src={external.thumb} 
+									alt={external.title || 'Link preview'}
+									class="w-full h-32 object-cover"
+								/>
+								<div class="p-3">
+									<h4 class="font-semibold text-sm text-gray-900 mb-1">{external.title}</h4>
+									{#if external.description}
+										<p class="text-xs text-gray-600 mb-2">{external.description}</p>
+									{/if}
+									<a href={external.uri} target="_blank" rel="noopener noreferrer" class="text-xs text-blue-600 hover:underline">
+										{external.uri}
+									</a>
 								</div>
 							</div>
 						{/if}
