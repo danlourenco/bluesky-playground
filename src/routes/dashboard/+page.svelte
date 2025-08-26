@@ -17,67 +17,6 @@
 		{ id: 'followers', name: 'Get Followers', description: 'Get your followers' }
 	];
 
-	// HLS.js support for video playback
-	let Hls: any = null;
-	
-	onMount(async () => {
-		// Load HLS.js dynamically from CDN
-		if (typeof window !== 'undefined') {
-			try {
-				// Create script tag to load HLS.js
-				const script = document.createElement('script');
-				script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js';
-				script.onload = () => {
-					Hls = (window as any).Hls;
-					console.log('HLS.js loaded successfully', Hls ? 'supported' : 'not supported');
-				};
-				script.onerror = () => {
-					console.log('Failed to load HLS.js, falling back to native video');
-				};
-				document.head.appendChild(script);
-			} catch (error) {
-				console.log('HLS.js not available, falling back to native video');
-			}
-		}
-	});
-
-	function setupVideo(videoElement: HTMLVideoElement, playlistUrl: string) {
-		console.log('Setting up video with playlist:', playlistUrl);
-		console.log('HLS available:', !!Hls, 'HLS supported:', Hls ? Hls.isSupported() : false);
-		
-		if (Hls && Hls.isSupported()) {
-			console.log('Using HLS.js for video playback');
-			const hls = new Hls({
-				debug: true,
-				enableWorker: false
-			});
-			
-			hls.loadSource(playlistUrl);
-			hls.attachMedia(videoElement);
-			
-			hls.on(Hls.Events.MANIFEST_PARSED, function () {
-				console.log('HLS manifest parsed, video ready to play');
-			});
-			
-			hls.on(Hls.Events.ERROR, function (event, data) {
-				console.error('HLS error:', event, data);
-			});
-			
-			return {
-				destroy() {
-					hls.destroy();
-				}
-			};
-		} else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-			// Native HLS support (Safari)
-			console.log('Using native HLS support');
-			videoElement.src = playlistUrl;
-		} else {
-			console.log('HLS not supported, setting source directly');
-			videoElement.src = playlistUrl;
-		}
-		return { destroy() {} };
-	}
 
 	// Copy JSON to clipboard function
 	async function copyPostJson(postData: any, postIndex?: number) {
@@ -264,186 +203,12 @@
 									</h3>
 									<div class="divide-y">
 										{#each data.apiData.feed.slice(0, 5) as item, index}
-											<div class="hover:bg-gray-50 relative group">
-												<!-- Copy JSON Button -->
-												<button
-													id="copy-btn-{index}"
-													on:click={() => copyPostJson(item, index)}
-													class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-600 hover:bg-gray-700 text-white text-xs px-2 py-1 rounded-md flex items-center space-x-1 z-10"
-													title="Copy post JSON to clipboard"
-												>
-													<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-													</svg>
-													<span>Copy JSON</span>
-												</button>
-												
-												<!-- Repost indicator -->
-												{#if item.reason?.$type === 'app.bsky.feed.defs#reasonRepost'}
-													<div class="p-4 pb-2">
-														<div class="flex items-center space-x-2 text-gray-500 text-sm">
-															<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-																<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-															</svg>
-															<span>You reposted</span>
-															<span class="text-xs">• {new Date(item.reason.indexedAt).toLocaleDateString()}</span>
-														</div>
-													</div>
-												{/if}
-												
-												<!-- Parent post if this is a reply -->
-												{#if item.post.record?.reply && item.parentPost}
-													<div class="p-4 pb-2 border-l-2 border-gray-200 ml-4">
-														<div class="flex space-x-3">
-															<img 
-																src={item.parentPost.author.avatar || 'https://via.placeholder.com/32x32/e5e7eb/9ca3af?text=?'} 
-																alt="{item.parentPost.author.displayName || item.parentPost.author.handle}'s avatar"
-																class="w-8 h-8 rounded-full object-cover flex-shrink-0"
-															/>
-															<div class="flex-1 min-w-0">
-																<div class="flex items-center space-x-1 text-sm">
-																	<span class="font-medium text-gray-700">{item.parentPost.author.displayName || item.parentPost.author.handle}</span>
-																	<span class="text-gray-500">@{item.parentPost.author.handle}</span>
-																	<span class="text-gray-400">·</span>
-																	<span class="text-gray-500 text-xs">
-																		{new Date(item.parentPost.indexedAt).toLocaleDateString()}
-																	</span>
-																</div>
-																<div class="mt-1 text-gray-600 text-sm whitespace-pre-wrap break-words">
-																	{item.parentPost.record.text}
-																</div>
-															</div>
-														</div>
-													</div>
-												{/if}
-												
-												<!-- Current post (indented if it's a reply) -->
-												<div class="p-4 {item.post.record?.reply ? 'pt-2' : ''}">
-													<div class="flex space-x-3 {item.post.record?.reply ? 'ml-4' : ''}">
-														<img 
-															src={item.post.author.avatar || 'https://via.placeholder.com/48x48/e5e7eb/9ca3af?text=?'} 
-															alt="{item.post.author.displayName || item.post.author.handle}'s avatar"
-															class="w-12 h-12 rounded-full object-cover flex-shrink-0"
-														/>
-														<div class="flex-1 min-w-0">
-															<!-- Reply indicator (simplified) -->
-															{#if item.post.record?.reply}
-																<div class="flex items-center space-x-2 mb-1 text-gray-500 text-xs">
-																	<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-																		<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
-																	</svg>
-																	<span>Replying</span>
-																</div>
-															{/if}
-														
-														<div class="flex items-center space-x-1">
-															<span class="font-semibold text-gray-900">{item.post.author.displayName || item.post.author.handle}</span>
-															<span class="text-gray-500">@{item.post.author.handle}</span>
-															<span class="text-gray-400">·</span>
-															<span class="text-gray-500 text-sm">
-																{new Date(item.post.indexedAt).toLocaleDateString()}
-															</span>
-														</div>
-														<div class="mt-1 text-gray-800 whitespace-pre-wrap break-words">
-															{item.post.record.text}
-														</div>
-														<!-- Direct images -->
-														{#if item.post.embed?.images}
-															<div class="mt-3 grid grid-cols-2 gap-2 max-w-md">
-																{#each item.post.embed.images as image}
-																	<img 
-																		src={image.thumb} 
-																		alt={image.alt || 'Post image'}
-																		class="rounded-lg object-cover w-full h-32"
-																	/>
-																{/each}
-															</div>
-														{/if}
-														
-														<!-- Direct video embed -->
-														{#if item.post.embed?.$type === 'app.bsky.embed.video#view'}
-															{@const video = item.post.embed}
-															<div class="mt-3 relative rounded-lg overflow-hidden bg-black" style="aspect-ratio: {video.aspectRatio.width}/{video.aspectRatio.height}">
-																<video 
-																	controls 
-																	poster={video.thumbnail}
-																	class="w-full h-full object-cover"
-																	preload="metadata"
-																	use:setupVideo={video.playlist}
-																>
-																	<p class="text-white p-4 text-center">Loading video...</p>
-																</video>
-																<div class="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
-																	Video
-																</div>
-															</div>
-														{/if}
-														
-														<!-- Embedded quote post with potential video -->
-														{#if item.post.embed?.record?.record}
-															<div class="mt-3 border border-gray-200 rounded-lg p-3 bg-gray-50">
-																<div class="flex items-center space-x-2 mb-2">
-																	<img 
-																		src={item.post.embed.record.record.author.avatar || 'https://via.placeholder.com/24x24/e5e7eb/9ca3af?text=?'} 
-																		alt="{item.post.embed.record.record.author.displayName || item.post.embed.record.record.author.handle}'s avatar"
-																		class="w-6 h-6 rounded-full object-cover"
-																	/>
-																	<span class="font-medium text-gray-700 text-sm">{item.post.embed.record.record.author.displayName || item.post.embed.record.record.author.handle}</span>
-																	<span class="text-gray-500 text-sm">@{item.post.embed.record.record.author.handle}</span>
-																</div>
-																<div class="text-gray-800 text-sm mb-2">{item.post.embed.record.record.value.text}</div>
-																
-																<!-- Embedded video in quote post -->
-																{#if item.post.embed.record.record.embeds?.[0]?.$type === 'app.bsky.embed.video#view'}
-																	{@const video = item.post.embed.record.record.embeds[0]}
-																	<div class="relative rounded-lg overflow-hidden bg-black" style="aspect-ratio: {video.aspectRatio.width}/{video.aspectRatio.height}">
-																		<video 
-																			controls 
-																			poster={video.thumbnail}
-																			class="w-full h-full object-cover"
-																			preload="metadata"
-																			use:setupVideo={video.playlist}
-																		>
-																			<p class="text-white p-4 text-center">Loading video...</p>
-																		</video>
-																		<div class="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
-																			Video
-																		</div>
-																	</div>
-																{/if}
-																
-																<!-- Engagement stats for embedded post -->
-																<div class="flex items-center space-x-4 mt-2 text-gray-500 text-xs">
-																	<span>{item.post.embed.record.record.replyCount || 0} replies</span>
-																	<span>{item.post.embed.record.record.repostCount || 0} reposts</span>
-																	<span>{item.post.embed.record.record.likeCount || 0} likes</span>
-																</div>
-															</div>
-														{/if}
-														<div class="flex items-center space-x-6 mt-3 text-gray-500">
-															<div class="flex items-center space-x-2">
-																<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-																	<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-																</svg>
-																<span class="text-sm">{item.post.replyCount || 0}</span>
-															</div>
-															<div class="flex items-center space-x-2">
-																<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-																	<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-																</svg>
-																<span class="text-sm">{item.post.repostCount || 0}</span>
-															</div>
-															<div class="flex items-center space-x-2">
-																<svg class="w-5 h-5 {item.post.viewer?.like ? 'text-red-500' : ''}" fill={item.post.viewer?.like ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-																	<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-																</svg>
-																<span class="text-sm {item.post.viewer?.like ? 'text-red-500' : ''}">{item.post.likeCount || 0}</span>
-															</div>
-														</div>
-													</div>
-												</div>
-											</div>
-										</div>
+											<PostComponent 
+												post={item} 
+												showCopyButton={true} 
+												copyButtonId="copy-btn-{index}"
+												showRepostIndicator={true}
+											/>
 										{/each}
 									</div>
 									{#if data.apiData.feed.length > 5}
@@ -551,14 +316,28 @@
 															{data.apiData.thread.post.record.text}
 														</div>
 														{#if data.apiData.thread.post.embed?.images}
-															<div class="mt-3 grid grid-cols-2 gap-2 max-w-md">
-																{#each data.apiData.thread.post.embed.images as image}
-																	<img 
-																		src={image.thumb} 
-																		alt={image.alt || 'Post image'}
-																		class="rounded-lg object-cover w-full h-32"
-																	/>
-																{/each}
+															<div class="mt-3">
+																{#if data.apiData.thread.post.embed.images.length === 1}
+																	{@const image = data.apiData.thread.post.embed.images[0]}
+																	<div class="max-w-md">
+																		<img 
+																			src={image.fullsize} 
+																			alt={image.alt || 'Post image'}
+																			class="rounded-lg w-full h-auto"
+																			loading="lazy"
+																		/>
+																	</div>
+																{:else}
+																	<div class="grid grid-cols-2 gap-2 max-w-md">
+																		{#each data.apiData.thread.post.embed.images as image}
+																			<img 
+																				src={image.thumb} 
+																				alt={image.alt || 'Post image'}
+																				class="rounded-lg object-cover w-full h-32"
+																			/>
+																		{/each}
+																	</div>
+																{/if}
 															</div>
 														{/if}
 														<div class="flex items-center space-x-6 mt-3 text-gray-500">
@@ -743,14 +522,28 @@
 														
 														<!-- Media embeds in liked posts -->
 														{#if item.post.embed?.images}
-															<div class="mt-3 grid grid-cols-2 gap-2 max-w-md">
-																{#each item.post.embed.images as image}
-																	<img 
-																		src={image.thumb} 
-																		alt={image.alt || 'Post image'}
-																		class="rounded-lg object-cover w-full h-32"
-																	/>
-																{/each}
+															<div class="mt-3">
+																{#if item.post.embed.images.length === 1}
+																	{@const image = item.post.embed.images[0]}
+																	<div class="max-w-md">
+																		<img 
+																			src={image.fullsize} 
+																			alt={image.alt || 'Post image'}
+																			class="rounded-lg w-full h-auto"
+																			loading="lazy"
+																		/>
+																	</div>
+																{:else}
+																	<div class="grid grid-cols-2 gap-2 max-w-md">
+																		{#each item.post.embed.images as image}
+																			<img 
+																				src={image.thumb} 
+																				alt={image.alt || 'Post image'}
+																				class="rounded-lg object-cover w-full h-32"
+																			/>
+																		{/each}
+																	</div>
+																{/if}
 															</div>
 														{/if}
 														

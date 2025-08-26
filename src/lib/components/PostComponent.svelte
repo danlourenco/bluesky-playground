@@ -173,14 +173,28 @@
 				
 				<!-- Direct images -->
 				{#if post.post.embed?.images}
-					<div class="mt-3 grid grid-cols-2 gap-2 max-w-md">
-						{#each post.post.embed.images as image}
-							<img 
-								src={image.thumb} 
-								alt={image.alt || 'Post image'}
-								class="rounded-lg object-cover w-full h-32"
-							/>
-						{/each}
+					<div class="mt-3">
+						{#if post.post.embed.images.length === 1}
+							{@const image = post.post.embed.images[0]}
+							<div class="max-w-md">
+								<img 
+									src={image.fullsize} 
+									alt={image.alt || 'Post image'}
+									class="rounded-lg w-full h-auto"
+									loading="lazy"
+								/>
+							</div>
+						{:else}
+							<div class="grid grid-cols-2 gap-2 max-w-md">
+								{#each post.post.embed.images as image}
+									<img 
+										src={image.thumb} 
+										alt={image.alt || 'Post image'}
+										class="rounded-lg object-cover w-full h-32"
+									/>
+								{/each}
+							</div>
+						{/if}
 					</div>
 				{/if}
 				
