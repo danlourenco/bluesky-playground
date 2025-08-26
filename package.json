@@ -61,6 +61,7 @@
 		"@atproto/api": "^0.16.3",
 		"@atproto/jwk-jose": "^0.1.10",
 		"@atproto/oauth-client-node": "^0.3.5",
+		"hls.js": "^1.6.11",
 		"http-proxy": "^1.18.1"
 	}
 }
