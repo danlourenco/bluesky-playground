@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
+	import PostComponent from '$lib/components/PostComponent.svelte';
 
 	// The data from our server load function
 	export let data: PageData;
@@ -14,6 +16,96 @@
 		{ id: 'following', name: 'Get Following', description: 'Get users you follow' },
 		{ id: 'followers', name: 'Get Followers', description: 'Get your followers' }
 	];
+
+	// HLS.js support for video playback
+	let Hls: any = null;
+	
+	onMount(async () => {
+		// Load HLS.js dynamically from CDN
+		if (typeof window !== 'undefined') {
+			try {
+				// Create script tag to load HLS.js
+				const script = document.createElement('script');
+				script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js';
+				script.onload = () => {
+					Hls = (window as any).Hls;
+					console.log('HLS.js loaded successfully', Hls ? 'supported' : 'not supported');
+				};
+				script.onerror = () => {
+					console.log('Failed to load HLS.js, falling back to native video');
+				};
+				document.head.appendChild(script);
+			} catch (error) {
+				console.log('HLS.js not available, falling back to native video');
+			}
+		}
+	});
+
+	function setupVideo(videoElement: HTMLVideoElement, playlistUrl: string) {
+		console.log('Setting up video with playlist:', playlistUrl);
+		console.log('HLS available:', !!Hls, 'HLS supported:', Hls ? Hls.isSupported() : false);
+		
+		if (Hls && Hls.isSupported()) {
+			console.log('Using HLS.js for video playback');
+			const hls = new Hls({
+				debug: true,
+				enableWorker: false
+			});
+			
+			hls.loadSource(playlistUrl);
+			hls.attachMedia(videoElement);
+			
+			hls.on(Hls.Events.MANIFEST_PARSED, function () {
+				console.log('HLS manifest parsed, video ready to play');
+			});
+			
+			hls.on(Hls.Events.ERROR, function (event, data) {
+				console.error('HLS error:', event, data);
+			});
+			
+			return {
+				destroy() {
+					hls.destroy();
+				}
+			};
+		} else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+			// Native HLS support (Safari)
+			console.log('Using native HLS support');
+			videoElement.src = playlistUrl;
+		} else {
+			console.log('HLS not supported, setting source directly');
+			videoElement.src = playlistUrl;
+		}
+		return { destroy() {} };
+	}
+
+	// Copy JSON to clipboard function
+	async function copyPostJson(postData: any, postIndex?: number) {
+		const jsonString = JSON.stringify(postData, null, 2);
+		
+		try {
+			await navigator.clipboard.writeText(jsonString);
+			
+			// Show success feedback (temporary)
+			const buttonId = `copy-btn-${postIndex || 'single'}`;
+			const button = document.getElementById(buttonId);
+			if (button) {
+				const originalText = button.innerHTML;
+				button.innerHTML = '✓ Copied!';
+				button.classList.add('bg-green-600', 'hover:bg-green-700');
+				button.classList.remove('bg-gray-600', 'hover:bg-gray-700');
+				
+				setTimeout(() => {
+					button.innerHTML = originalText;
+					button.classList.remove('bg-green-600', 'hover:bg-green-700');
+					button.classList.add('bg-gray-600', 'hover:bg-gray-700');
+				}, 2000);
+			}
+		} catch (error) {
+			console.error('Failed to copy JSON:', error);
+			alert('Failed to copy JSON to clipboard');
+		}
+	}
 </script>
 
 <div class="min-h-screen bg-gray-50 py-8">
@@ -27,12 +119,20 @@
 						Logged in as: <code class="bg-gray-100 px-2 py-1 rounded">{data.user}</code>
 					</p>
 				</div>
-				<a
-					href="/auth/logout"
-					class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition"
-				>
-					Logout
-				</a>
+				<div class="flex space-x-2">
+					<a
+						href="/debug"
+						class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+					>
+						🐛 Debug Page
+					</a>
+					<a
+						href="/auth/logout"
+						class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition"
+					>
+						Logout
+					</a>
+				</div>
 			</div>
 		</div>
 
@@ -119,7 +219,19 @@
 
 							<!-- Visual Feed Display -->
 							{#if data.demo === 'profile' && data.apiData}
-								<div class="bg-white rounded-lg border p-6 mb-6">
+								<div class="bg-white rounded-lg border p-6 mb-6 relative group">
+									<!-- Copy JSON Button for Profile -->
+									<button
+										id="copy-btn-profile"
+										on:click={() => copyPostJson(data.apiData, 'profile')}
+										class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-600 hover:bg-gray-700 text-white text-xs px-2 py-1 rounded-md flex items-center space-x-1 z-10"
+										title="Copy profile JSON to clipboard"
+									>
+										<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+										</svg>
+										<span>Copy JSON</span>
+									</button>
 									<h3 class="text-lg font-semibold mb-4 text-gray-800">Profile Preview</h3>
 									<div class="flex items-start space-x-4">
 										<img 
@@ -151,8 +263,21 @@
 										{data.demo === 'timeline' ? 'Timeline Feed' : 'Author Posts'}
 									</h3>
 									<div class="divide-y">
-										{#each data.apiData.feed.slice(0, 5) as item}
-											<div class="hover:bg-gray-50">
+										{#each data.apiData.feed.slice(0, 5) as item, index}
+											<div class="hover:bg-gray-50 relative group">
+												<!-- Copy JSON Button -->
+												<button
+													id="copy-btn-{index}"
+													on:click={() => copyPostJson(item, index)}
+													class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-600 hover:bg-gray-700 text-white text-xs px-2 py-1 rounded-md flex items-center space-x-1 z-10"
+													title="Copy post JSON to clipboard"
+												>
+													<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+													</svg>
+													<span>Copy JSON</span>
+												</button>
+												
 												<!-- Repost indicator -->
 												{#if item.reason?.$type === 'app.bsky.feed.defs#reasonRepost'}
 													<div class="p-4 pb-2">
@@ -244,10 +369,9 @@
 																	poster={video.thumbnail}
 																	class="w-full h-full object-cover"
 																	preload="metadata"
+																	use:setupVideo={video.playlist}
 																>
-																	<source src={video.playlist} type="application/x-mpegURL" />
-																	<!-- Fallback for browsers that don't support HLS -->
-																	<p class="text-white p-4">Your browser doesn't support this video format.</p>
+																	<p class="text-white p-4 text-center">Loading video...</p>
 																</video>
 																<div class="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
 																	Video
@@ -278,10 +402,9 @@
 																			poster={video.thumbnail}
 																			class="w-full h-full object-cover"
 																			preload="metadata"
+																			use:setupVideo={video.playlist}
 																		>
-																			<source src={video.playlist} type="application/x-mpegURL" />
-																			<!-- Fallback for browsers that don't support HLS -->
-																			<p class="text-white p-4">Your browser doesn't support this video format.</p>
+																			<p class="text-white p-4 text-center">Loading video...</p>
 																		</video>
 																		<div class="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
 																			Video
@@ -335,8 +458,20 @@
 										{data.demo === 'following' ? 'Following' : 'Followers'}
 									</h3>
 									<div class="divide-y">
-										{#each (data.apiData.follows || data.apiData.followers || []).slice(0, 8) as user}
-											<div class="p-4 hover:bg-gray-50">
+										{#each (data.apiData.follows || data.apiData.followers || []).slice(0, 8) as user, userIndex}
+											<div class="p-4 hover:bg-gray-50 relative group">
+												<!-- Copy JSON Button for User -->
+												<button
+													id="copy-btn-user-{userIndex}"
+													on:click={() => copyPostJson(user, `user-${userIndex}`)}
+													class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-600 hover:bg-gray-700 text-white text-xs px-2 py-1 rounded-md flex items-center space-x-1 z-10"
+													title="Copy user JSON to clipboard"
+												>
+													<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+													</svg>
+													<span>Copy JSON</span>
+												</button>
 												<div class="flex items-center space-x-3">
 													<img 
 														src={user.avatar || 'https://via.placeholder.com/48x48/e5e7eb/9ca3af?text=?'} 
@@ -379,7 +514,19 @@
 									<div class="p-4">
 										<!-- Main thread post -->
 										{#if data.apiData.thread.post}
-											<div class="border-l-4 border-blue-500 pl-4 mb-4">
+											<div class="border-l-4 border-blue-500 pl-4 mb-4 relative group">
+												<!-- Copy JSON Button for Thread Root -->
+												<button
+													id="copy-btn-thread-root"
+													on:click={() => copyPostJson(data.apiData.thread, 'thread-root')}
+													class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-600 hover:bg-gray-700 text-white text-xs px-2 py-1 rounded-md flex items-center space-x-1 z-10"
+													title="Copy thread JSON to clipboard"
+												>
+													<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+													</svg>
+													<span>Copy JSON</span>
+												</button>
 												<div class="flex space-x-3">
 													<img 
 														src={data.apiData.thread.post.author.avatar || 'https://via.placeholder.com/48x48/e5e7eb/9ca3af?text=?'} 
@@ -448,9 +595,21 @@
 													</svg>
 													<span>Replies ({data.apiData.thread.replies.length})</span>
 												</h4>
-												{#each data.apiData.thread.replies.slice(0, 5) as reply}
+												{#each data.apiData.thread.replies.slice(0, 5) as reply, replyIndex}
 													{#if reply.post}
-														<div class="border-l-2 border-gray-200 pl-4 ml-4">
+														<div class="border-l-2 border-gray-200 pl-4 ml-4 relative group">
+															<!-- Copy JSON Button for Reply -->
+															<button
+																id="copy-btn-reply-{replyIndex}"
+																on:click={() => copyPostJson(reply, `reply-${replyIndex}`)}
+																class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-600 hover:bg-gray-700 text-white text-xs px-2 py-1 rounded-md flex items-center space-x-1 z-10"
+																title="Copy reply JSON to clipboard"
+															>
+																<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+																	<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+																</svg>
+																<span>Copy JSON</span>
+															</button>
 															<div class="flex space-x-3">
 																<img 
 																	src={reply.post.author.avatar || 'https://via.placeholder.com/40x40/e5e7eb/9ca3af?text=?'} 
@@ -533,8 +692,21 @@
 								<div class="bg-white rounded-lg border mb-6">
 									<h3 class="text-lg font-semibold p-4 border-b text-gray-800">Liked Posts</h3>
 									<div class="divide-y">
-										{#each data.apiData.feed.slice(0, 5) as item}
-											<div class="p-4 hover:bg-gray-50">
+										{#each data.apiData.feed.slice(0, 5) as item, index}
+											<div class="p-4 hover:bg-gray-50 relative group">
+												<!-- Copy JSON Button -->
+												<button
+													id="copy-btn-likes-{index}"
+													on:click={() => copyPostJson(item, `likes-${index}`)}
+													class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-600 hover:bg-gray-700 text-white text-xs px-2 py-1 rounded-md flex items-center space-x-1 z-10"
+													title="Copy post JSON to clipboard"
+												>
+													<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+													</svg>
+													<span>Copy JSON</span>
+												</button>
+												
 												<div class="flex space-x-3">
 													<img 
 														src={item.post.author.avatar || 'https://via.placeholder.com/48x48/e5e7eb/9ca3af?text=?'} 
