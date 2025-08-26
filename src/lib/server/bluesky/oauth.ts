@@ -29,11 +29,13 @@ import type {
  * Manages the complete OAuth flow including authorization URL generation,
  * callback handling, session management, and authenticated agent creation.
  */
+// Shared stores across all service instances to prevent session loss
+const sharedStateStore = new Map<string, any>();
+const sharedSessionStore = new Map<string, any>();
+
 export class BlueskyOAuthService {
   private readonly config: Required<BlueskyServiceOptions>;
-  private oauthClient: NodeOAuthClient | null = null;
-  private readonly stateStore = new Map<string, any>();
-  private readonly sessionStore = new Map<string, any>();
+  private static oauthClient: NodeOAuthClient | null = null;
 
   constructor(options: BlueskyServiceOptions = {}) {
     // Set up configuration with defaults
@@ -48,7 +50,7 @@ export class BlueskyOAuthService {
 
     // Force client recreation in development mode
     if (this.config.developmentMode) {
-      this.oauthClient = null;
+      BlueskyOAuthService.oauthClient = null;
     }
   }
 
@@ -72,8 +74,8 @@ export class BlueskyOAuthService {
    */
   private async getOAuthClient(): Promise<NodeOAuthClient> {
     // Force recreation in development to pick up config changes
-    if (this.oauthClient && !this.config.developmentMode) {
-      return this.oauthClient;
+    if (BlueskyOAuthService.oauthClient && !this.config.developmentMode) {
+      return BlueskyOAuthService.oauthClient;
     }
 
     console.log('Creating OAuth client with localhost development pattern...');
@@ -84,7 +86,7 @@ export class BlueskyOAuthService {
 
     // Create client using the EXACT configuration from the working commit (a5f8aa2)
     // CRITICAL: Use snake_case property names, NOT camelCase
-    this.oauthClient = new NodeOAuthClient({
+    BlueskyOAuthService.oauthClient = new NodeOAuthClient({
       clientMetadata: {
         client_id: this.config.clientId,  // snake_case, NOT clientId
         client_name: 'SvelteKit Bsky Guide',
@@ -104,16 +106,16 @@ export class BlueskyOAuthService {
       stateStore: {
         async set(key: string, internalState: any) {
           console.log(`Setting state for key: ${key}`);
-          this.stateStore.set(key, internalState);
+          sharedStateStore.set(key, internalState);
         },
         async get(key: string) {
-          const state = this.stateStore.get(key);
+          const state = sharedStateStore.get(key);
           console.log(`Getting state for key: ${key}`, state ? 'found' : 'not found');
           return state;
         },
         async del(key: string) {
           console.log(`Deleting state for key: ${key}`);
-          this.stateStore.delete(key);
+          sharedStateStore.delete(key);
         }
       },
 
@@ -121,22 +123,22 @@ export class BlueskyOAuthService {
       sessionStore: {
         async set(sub: string, session: any) {
           console.log(`Storing session for user: ${sub}`);
-          this.sessionStore.set(sub, session);
+          sharedSessionStore.set(sub, session);
         },
         async get(sub: string) {
-          const session = this.sessionStore.get(sub);
+          const session = sharedSessionStore.get(sub);
           console.log(`Getting session for user: ${sub}`, session ? 'found' : 'not found');
           return session;
         },
         async del(sub: string) {
           console.log(`Deleting session for user: ${sub}`);
-          this.sessionStore.delete(sub);
+          sharedSessionStore.delete(sub);
         }
       }
     });
 
     console.log('OAuth client created successfully!');
-    return this.oauthClient;
+    return BlueskyOAuthService.oauthClient;
   }
 
   /**
@@ -270,7 +272,7 @@ export class BlueskyOAuthService {
   async logout(userDid: DID): Promise<void> {
     try {
       console.log(`Logging out user: ${userDid}`);
-      this.sessionStore.delete(userDid);
+      sharedSessionStore.delete(userDid);
       
       // Note: In a full implementation, you might also want to revoke tokens
       // with the OAuth provider, but for development this is sufficient
@@ -301,8 +303,8 @@ export class BlueskyOAuthService {
    */
   getSessionStats(): { activeSessions: number; stateEntries: number } {
     return {
-      activeSessions: this.sessionStore.size,
-      stateEntries: this.stateStore.size
+      activeSessions: sharedSessionStore.size,
+      stateEntries: sharedStateStore.size
     };
   }
 
@@ -313,7 +315,7 @@ export class BlueskyOAuthService {
    */
   async cleanup(): Promise<number> {
     // For now, just clear everything (in production you'd check expiration times)
-    const totalItems = this.sessionStore.size + this.stateStore.size;
+    const totalItems = sharedSessionStore.size + sharedStateStore.size;
     
     if (this.config.developmentMode) {
       console.log('Development mode: skipping cleanup');
