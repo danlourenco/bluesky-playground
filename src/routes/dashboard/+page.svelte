@@ -222,6 +222,7 @@
 														<div class="mt-1 text-gray-800 whitespace-pre-wrap break-words">
 															{item.post.record.text}
 														</div>
+														<!-- Direct images -->
 														{#if item.post.embed?.images}
 															<div class="mt-3 grid grid-cols-2 gap-2 max-w-md">
 																{#each item.post.embed.images as image}
@@ -231,6 +232,69 @@
 																		class="rounded-lg object-cover w-full h-32"
 																	/>
 																{/each}
+															</div>
+														{/if}
+														
+														<!-- Direct video embed -->
+														{#if item.post.embed?.$type === 'app.bsky.embed.video#view'}
+															{@const video = item.post.embed}
+															<div class="mt-3 relative rounded-lg overflow-hidden bg-black" style="aspect-ratio: {video.aspectRatio.width}/{video.aspectRatio.height}">
+																<video 
+																	controls 
+																	poster={video.thumbnail}
+																	class="w-full h-full object-cover"
+																	preload="metadata"
+																>
+																	<source src={video.playlist} type="application/x-mpegURL" />
+																	<!-- Fallback for browsers that don't support HLS -->
+																	<p class="text-white p-4">Your browser doesn't support this video format.</p>
+																</video>
+																<div class="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+																	Video
+																</div>
+															</div>
+														{/if}
+														
+														<!-- Embedded quote post with potential video -->
+														{#if item.post.embed?.record?.record}
+															<div class="mt-3 border border-gray-200 rounded-lg p-3 bg-gray-50">
+																<div class="flex items-center space-x-2 mb-2">
+																	<img 
+																		src={item.post.embed.record.record.author.avatar || 'https://via.placeholder.com/24x24/e5e7eb/9ca3af?text=?'} 
+																		alt="{item.post.embed.record.record.author.displayName || item.post.embed.record.record.author.handle}'s avatar"
+																		class="w-6 h-6 rounded-full object-cover"
+																	/>
+																	<span class="font-medium text-gray-700 text-sm">{item.post.embed.record.record.author.displayName || item.post.embed.record.record.author.handle}</span>
+																	<span class="text-gray-500 text-sm">@{item.post.embed.record.record.author.handle}</span>
+																</div>
+																<div class="text-gray-800 text-sm mb-2">{item.post.embed.record.record.value.text}</div>
+																
+																<!-- Embedded video in quote post -->
+																{#if item.post.embed.record.record.embeds?.[0]?.$type === 'app.bsky.embed.video#view'}
+																	{@const video = item.post.embed.record.record.embeds[0]}
+																	<div class="relative rounded-lg overflow-hidden bg-black" style="aspect-ratio: {video.aspectRatio.width}/{video.aspectRatio.height}">
+																		<video 
+																			controls 
+																			poster={video.thumbnail}
+																			class="w-full h-full object-cover"
+																			preload="metadata"
+																		>
+																			<source src={video.playlist} type="application/x-mpegURL" />
+																			<!-- Fallback for browsers that don't support HLS -->
+																			<p class="text-white p-4">Your browser doesn't support this video format.</p>
+																		</video>
+																		<div class="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+																			Video
+																		</div>
+																	</div>
+																{/if}
+																
+																<!-- Engagement stats for embedded post -->
+																<div class="flex items-center space-x-4 mt-2 text-gray-500 text-xs">
+																	<span>{item.post.embed.record.record.replyCount || 0} replies</span>
+																	<span>{item.post.embed.record.record.repostCount || 0} reposts</span>
+																	<span>{item.post.embed.record.record.likeCount || 0} likes</span>
+																</div>
 															</div>
 														{/if}
 														<div class="flex items-center space-x-6 mt-3 text-gray-500">
@@ -504,6 +568,77 @@
 														<div class="mt-1 text-gray-800 whitespace-pre-wrap break-words">
 															{item.post.record.text}
 														</div>
+														
+														<!-- Media embeds in liked posts -->
+														{#if item.post.embed?.images}
+															<div class="mt-3 grid grid-cols-2 gap-2 max-w-md">
+																{#each item.post.embed.images as image}
+																	<img 
+																		src={image.thumb} 
+																		alt={image.alt || 'Post image'}
+																		class="rounded-lg object-cover w-full h-32"
+																	/>
+																{/each}
+															</div>
+														{/if}
+														
+														{#if item.post.embed?.$type === 'app.bsky.embed.video#view'}
+															{@const video = item.post.embed}
+															<div class="mt-3 relative rounded-lg overflow-hidden bg-black" style="aspect-ratio: {video.aspectRatio.width}/{video.aspectRatio.height}">
+																<video 
+																	controls 
+																	poster={video.thumbnail}
+																	class="w-full h-full object-cover"
+																	preload="metadata"
+																>
+																	<source src={video.playlist} type="application/x-mpegURL" />
+																	<p class="text-white p-4">Your browser doesn't support this video format.</p>
+																</video>
+																<div class="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+																	Video
+																</div>
+															</div>
+														{/if}
+														
+														{#if item.post.embed?.record?.record}
+															<div class="mt-3 border border-gray-200 rounded-lg p-3 bg-gray-50">
+																<div class="flex items-center space-x-2 mb-2">
+																	<img 
+																		src={item.post.embed.record.record.author.avatar || 'https://via.placeholder.com/24x24/e5e7eb/9ca3af?text=?'} 
+																		alt="{item.post.embed.record.record.author.displayName || item.post.embed.record.record.author.handle}'s avatar"
+																		class="w-6 h-6 rounded-full object-cover"
+																	/>
+																	<span class="font-medium text-gray-700 text-sm">{item.post.embed.record.record.author.displayName || item.post.embed.record.record.author.handle}</span>
+																	<span class="text-gray-500 text-sm">@{item.post.embed.record.record.author.handle}</span>
+																</div>
+																<div class="text-gray-800 text-sm mb-2">{item.post.embed.record.record.value.text}</div>
+																
+																{#if item.post.embed.record.record.embeds?.[0]?.$type === 'app.bsky.embed.video#view'}
+																	{@const video = item.post.embed.record.record.embeds[0]}
+																	<div class="relative rounded-lg overflow-hidden bg-black" style="aspect-ratio: {video.aspectRatio.width}/{video.aspectRatio.height}">
+																		<video 
+																			controls 
+																			poster={video.thumbnail}
+																			class="w-full h-full object-cover"
+																			preload="metadata"
+																		>
+																			<source src={video.playlist} type="application/x-mpegURL" />
+																			<p class="text-white p-4">Your browser doesn't support this video format.</p>
+																		</video>
+																		<div class="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+																			Video
+																		</div>
+																	</div>
+																{/if}
+																
+																<div class="flex items-center space-x-4 mt-2 text-gray-500 text-xs">
+																	<span>{item.post.embed.record.record.replyCount || 0} replies</span>
+																	<span>{item.post.embed.record.record.repostCount || 0} reposts</span>
+																	<span>{item.post.embed.record.record.likeCount || 0} likes</span>
+																</div>
+															</div>
+														{/if}
+														
 														<div class="flex items-center space-x-2 mt-3 text-red-500">
 															<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
 																<path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
