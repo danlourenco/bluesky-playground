@@ -48,10 +48,7 @@ export class BlueskyOAuthService {
       apiTimeout: options.apiTimeout || 30000
     };
 
-    // Force client recreation in development mode
-    if (this.config.developmentMode) {
-      BlueskyOAuthService.oauthClient = null;
-    }
+    // Keep existing client to preserve sessions across requests
   }
 
   /**
@@ -73,8 +70,8 @@ export class BlueskyOAuthService {
    * commit (a5f8aa2), using snake_case property names as required by NodeOAuthClient.
    */
   private async getOAuthClient(): Promise<NodeOAuthClient> {
-    // Force recreation in development to pick up config changes
-    if (BlueskyOAuthService.oauthClient && !this.config.developmentMode) {
+    // Return existing client if available (prevents store recreation)
+    if (BlueskyOAuthService.oauthClient) {
       return BlueskyOAuthService.oauthClient;
     }
 
