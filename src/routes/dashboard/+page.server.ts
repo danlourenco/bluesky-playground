@@ -39,7 +39,8 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
 			const response = await bluesky.executeDemoAPI(sessionId, demo, sessionId, 10);
 			
 			if (response.success) {
-				apiData = response.data;
+				// For API compatibility with the template, wrap the data to match expected structure
+				apiData = { data: response.data };
 			} else {
 				apiError = response.error?.message || 'Unknown error occurred';
 			}
