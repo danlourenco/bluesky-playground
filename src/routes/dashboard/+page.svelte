@@ -60,6 +60,12 @@
 				</div>
 				<div class="flex space-x-2">
 					<a
+						href="/tv-guide"
+						class="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition"
+					>
+						📺 TV Guide
+					</a>
+					<a
 						href="/debug"
 						class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
 					>
