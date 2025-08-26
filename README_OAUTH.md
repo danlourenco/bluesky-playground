@@ -146,8 +146,14 @@ flowchart LR
 
 ```
 src/
-├── lib/server/
-│   └── oauth.ts                 # OAuth client & session management
+├── lib/
+│   ├── server/bluesky/
+│   │   ├── types.ts            # TypeScript type definitions
+│   │   ├── oauth.ts            # OAuth service class
+│   │   ├── api.ts              # API service class  
+│   │   └── index.ts            # Main Bluesky service
+│   └── components/
+│       └── PostComponent.svelte # Reusable post rendering
 ├── routes/
 │   ├── +page.server.ts          # OAuth callback handling
 │   ├── +page.svelte            # Landing page with login
@@ -157,65 +163,132 @@ src/
 │   ├── dashboard/
 │   │   ├── +page.server.ts     # API calls & data fetching
 │   │   └── +page.svelte        # Visual UI for all APIs
+│   ├── debug/
+│   │   └── +page.svelte        # JSON debugging interface
 │   ├── client-metadata.json/   # OAuth client metadata endpoint
 │   └── jwks.json/              # JWT keys endpoint (empty for 'none' auth)
 ```
 
 ### Key File Deep Dives
 
-#### **`src/lib/server/oauth.ts`** - The OAuth Engine
+#### **`src/lib/server/bluesky/types.ts`** - Type Definitions
 ```typescript
-export const createOAuthClient = async () => {
-  // Creates singleton OAuth client with localhost config
-  // Manages state store (CSRF protection)
-  // Manages session store (token persistence)
+// Comprehensive TypeScript types for all Bluesky API responses
+export interface BlueskyProfile {
+  did: DID;
+  handle: string;
+  displayName?: string;
+  avatar?: string;
+  description?: string;
+  followersCount?: number;
+  followsCount?: number;
+  postsCount?: number;
 }
 
-export const getUserAgent = async (userDid: string) => {
-  // Retrieves stored session for user
-  // Returns authenticated AT Protocol Agent
-  // Throws error if session invalid/expired
+export interface OAuthCallbackResult {
+  success: boolean;
+  userDid?: DID;
+  profile?: BlueskyProfile;
+  error?: string;
 }
+```
+
+#### **`src/lib/server/bluesky/oauth.ts`** - OAuth Service Class
+```typescript
+export class BlueskyOAuthService {
+  // Manages OAuth client lifecycle with correct snake_case properties
+  private async getOAuthClient(): Promise<NodeOAuthClient>
+  
+  // Initiates OAuth login flow with custom domain handle support
+  async initiateLogin(handle: string): Promise<string>
+  
+  // Handles OAuth callback and creates authenticated session
+  async handleCallback(callbackUrl: string): Promise<OAuthCallbackResult>
+  
+  // Gets authenticated agent for API calls
+  async getAuthenticatedAgent(userDid: DID): Promise<AuthenticatedAgent>
+  
+  // Validates existing sessions
+  async hasValidSession(userDid: DID): Promise<boolean>
+}
+```
+
+#### **`src/lib/server/bluesky/api.ts`** - API Service Class  
+```typescript
+export class BlueskyAPIService {
+  // Executes different demo APIs with data enrichment
+  async executeDemoAPI(
+    userDid: DID,
+    demoType: DemoType,
+    actorIdentifier: string,
+    limit: number
+  ): Promise<DemoAPIResponse>
+  
+  // Individual API methods with response enrichment
+  private async getProfile(agent: Agent, actor: string): Promise<ProfileResponse>
+  private async getTimeline(agent: Agent, limit: number): Promise<TimelineResponse>
+  private async getAuthorFeed(agent: Agent, actor: string, limit: number): Promise<AuthorFeedResponse>
+  // ... other API methods
+}
+```
+
+#### **`src/lib/server/bluesky/index.ts`** - Main Service Orchestrator
+```typescript
+export class BlueskyService {
+  private oauthService: BlueskyOAuthService;
+  private apiService: BlueskyAPIService;
+  
+  // Singleton pattern for consistent service usage
+  async initiateOAuthLogin(handle: string): Promise<string>
+  async handleOAuthCallback(callbackUrl: string, cookies: Cookies): Promise<OAuthCallbackResult>
+  async executeDemoAPI(userDid: DID, demo: DemoType, actor: string, limit: number): Promise<DemoAPIResponse>
+  async hasValidSession(userDid: DID): Promise<boolean>
+}
+
+// Factory function for consistent service access
+export function getBlueskyService(): BlueskyService
 ```
 
 #### **`src/routes/auth/login/+server.ts`** - OAuth Initiation
 ```typescript
 export const GET: RequestHandler = async ({ url }) => {
-  const client = await createOAuthClient();
   const handle = url.searchParams.get('handle') || '';
   
-  // Generate authorization URL with PKCE
-  const authUrl = await client.authorize(handle, {
-    state: crypto.randomUUID(),
-    scope: 'atproto transition:generic',
-    redirect_uri: REDIRECT_URI
-  });
+  // Use the refactored service architecture
+  const bluesky = getBlueskyService();
+  const authUrl = await bluesky.initiateOAuthLogin(handle);
   
-  throw redirect(302, authUrl.toString());
+  throw redirect(302, authUrl);
 };
 ```
 
 #### **`src/routes/+page.server.ts`** - OAuth Callback Handler
 ```typescript
 export const load: PageServerLoad = async ({ url, cookies }) => {
-  const code = url.searchParams.get('code');
-  const state = url.searchParams.get('state');
+  // Check if this is an OAuth callback
+  const isRealOAuthCallback = url.searchParams.has('code') && url.searchParams.has('state');
   
-  if (code && state) {
-    // Process OAuth callback
-    const client = await createOAuthClient();
-    const { session } = await client.callback(new URL(url.toString()));
+  if (isRealOAuthCallback) {
+    // Use the refactored service architecture
+    const bluesky = getBlueskyService();
+    const result = await bluesky.handleOAuthCallback(url.toString(), cookies);
     
-    // Store session & set cookie
-    cookies.set('bsky_session', session.sub, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7 // 1 week
-    });
-    
-    return { isOAuthCallback: true, success: true };
+    if (result.success && result.userDid) {
+      return {
+        isOAuthCallback: true,
+        success: true,
+        userDid: result.userDid,
+        redirectTo: '/dashboard'
+      };
+    } else {
+      throw redirect(302, '/?error=oauth_failed');
+    }
   }
+  
+  return {
+    isOAuthCallback: false,
+    hasError: url.searchParams.get('error') === 'oauth_failed'
+  };
 };
 ```
 
@@ -223,12 +296,29 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 
 ### Authentication-Required Endpoints
 
-All Bluesky API calls use the same pattern:
+All Bluesky API calls now use the unified service architecture:
 
 ```typescript
-const agent = await getUserAgent(sessionId);
-const response = await agent.getProfile({ actor: sessionId });
+// Unified API execution through service layer
+const bluesky = getBlueskyService();
+const response = await bluesky.executeDemoAPI(sessionId, 'profile', sessionId, 10);
+
+if (response.success) {
+  const profileData = response.data;
+} else {
+  const errorMessage = response.error?.message;
+}
 ```
+
+### Service Architecture Benefits
+
+The refactored architecture provides:
+
+1. **Type Safety**: Comprehensive TypeScript types for all responses
+2. **Error Handling**: Consistent error handling across all APIs  
+3. **Data Enrichment**: Automatic enhancement of API responses
+4. **Session Management**: Unified session validation and cleanup
+5. **Testing**: Easily mockable service classes for unit tests
 
 ### Pagination Handling
 
@@ -287,6 +377,50 @@ try {
 ```
 
 ## 🎨 UI Components & Data Flow
+
+### Reusable PostComponent Architecture
+
+The application now features a unified `PostComponent.svelte` that handles all post rendering:
+
+```typescript
+// PostComponent.svelte props
+export let post: any;                    // Post data object
+export let showCopyButton = true;       // Show JSON copy button
+export let copyButtonId = 'copy-btn';   // Unique button ID
+export let showRepostIndicator = true;  // Show repost indicators
+```
+
+**Key Features:**
+- **HLS.js Video Support**: Plays .m3u8 video streams properly
+- **Copy JSON Functionality**: Hover-to-reveal copy buttons on all posts
+- **Quote Post Rendering**: Handles nested quote posts with media
+- **Repost Detection**: Visual indicators for reposts vs original posts
+- **Engagement Stats**: Consistent display of likes, reposts, replies
+
+**Usage Examples:**
+```svelte
+<!-- Dashboard timeline posts -->
+<PostComponent 
+  post={item} 
+  copyButtonId="timeline-{index}"
+  showRepostIndicator={true} 
+/>
+
+<!-- Debug page testing -->
+<PostComponent 
+  post={parsedPost} 
+  showCopyButton={false}
+  copyButtonId="debug-post-copy"
+/>
+```
+
+### Debug Interface
+
+New `/debug` page for JSON testing:
+- Paste any post JSON to test UI rendering
+- Validate JSON structure and troubleshoot display issues
+- Test video playback and quote post rendering
+- Copy button integration for easy data transfer
 
 ### Feed Visualization Pipeline
 
