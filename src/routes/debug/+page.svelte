@@ -235,8 +235,8 @@
 										{/if}
 										
 										<!-- Embedded quote post with media -->
-										{#if parsedPost.post.embed?.record?.record}
-											{@const quotedPost = parsedPost.post.embed.record.record}
+										{#if parsedPost.post.embed?.$type === 'app.bsky.embed.record#view' && parsedPost.post.embed.record}
+											{@const quotedPost = parsedPost.post.embed.record}
 											<div class="mt-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
 												<!-- Quote post header -->
 												<div class="flex items-center space-x-2 mb-3">
