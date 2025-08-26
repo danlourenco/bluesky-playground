@@ -1,7 +1,7 @@
 // Server-side code for the dashboard page
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getDefaultBlueskyService } from '$lib/server/bluesky';
+import { getBlueskyService } from '$lib/server/bluesky';
 import type { DemoType } from '$lib/server/bluesky';
 
 export const load: PageServerLoad = async ({ cookies, url }) => {
@@ -15,8 +15,8 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
 	}
 
 	try {
-		// Get the Bluesky service instance
-		const bluesky = getDefaultBlueskyService();
+		// Get the singleton Bluesky service instance
+		const bluesky = getBlueskyService();
 
 		// Check if user has valid session
 		const hasValidSession = await bluesky.hasValidSession(sessionId);

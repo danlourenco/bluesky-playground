@@ -316,31 +316,31 @@ export class BlueskyService {
 }
 
 // ============================================================================
-// Default Service Instance
+// Singleton Service Instance
 // ============================================================================
 
-let defaultService: BlueskyService | null = null;
+let blueskyServiceInstance: BlueskyService | null = null;
 
 /**
- * Get the default Bluesky service instance
+ * Get the singleton Bluesky service instance
  * 
- * Creates a singleton instance with default configuration.
+ * Creates a single shared instance with default configuration for the entire application.
  * 
- * @param options - Optional configuration to override defaults
- * @returns Default Bluesky service instance
+ * @returns Singleton Bluesky service instance
  */
-export function getDefaultBlueskyService(options?: BlueskyServiceOptions): BlueskyService {
-  if (!defaultService) {
-    defaultService = new BlueskyService(options);
+export function getBlueskyService(): BlueskyService {
+  if (!blueskyServiceInstance) {
+    blueskyServiceInstance = new BlueskyService();
   }
-  return defaultService;
+  return blueskyServiceInstance;
 }
 
 /**
- * Reset the default service instance (useful for testing)
+ * Reset the service instance (useful for testing)
+ * @internal
  */
-export function resetDefaultBlueskyService(): void {
-  defaultService = null;
+export function resetBlueskyService(): void {
+  blueskyServiceInstance = null;
 }
 
 // ============================================================================
@@ -363,20 +363,20 @@ export { BlueskyError, OAuthError } from './types.js';
 
 /**
  * Create OAuth client (legacy compatibility)
- * @deprecated Use BlueskyService instead
+ * @deprecated Use getBlueskyService() instead
  */
 export async function createOAuthClient(): Promise<any> {
-  console.warn('createOAuthClient is deprecated. Use BlueskyService instead.');
-  const service = getDefaultBlueskyService();
-  return (service as any).oauthService.getOAuthClient();
+  console.warn('createOAuthClient is deprecated. Use getBlueskyService() instead.');
+  const service = getBlueskyService();
+  return (service as any).oauthService.getOAuthClientForTesting();
 }
 
 /**
  * Get user agent (legacy compatibility)
- * @deprecated Use BlueskyService.getAuthenticatedAgent instead
+ * @deprecated Use getBlueskyService().getAuthenticatedAgent instead
  */
 export async function getUserAgent(userDid: DID): Promise<AuthenticatedAgent> {
-  console.warn('getUserAgent is deprecated. Use BlueskyService.getAuthenticatedAgent instead.');
-  const service = getDefaultBlueskyService();
+  console.warn('getUserAgent is deprecated. Use getBlueskyService().getAuthenticatedAgent instead.');
+  const service = getBlueskyService();
   return await service.getAuthenticatedAgent(userDid);
 }

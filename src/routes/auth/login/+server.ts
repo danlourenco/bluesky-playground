@@ -1,14 +1,14 @@
 // Login endpoint - initiates OAuth flow (following README example)
 import { redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getDefaultBlueskyService } from '$lib/server/bluesky';
+import { getBlueskyService } from '$lib/server/bluesky';
 
 export const GET: RequestHandler = async ({ url }) => {
 	console.log('Starting OAuth login flow...');
 
 	try {
-		// Get the Bluesky service instance (same one used by callback and dashboard)
-		const bluesky = getDefaultBlueskyService();
+		// Get the singleton Bluesky service instance
+		const bluesky = getBlueskyService();
 
 		// Get handle from query parameters (optional)
 		const handle = url.searchParams.get('handle') || '';

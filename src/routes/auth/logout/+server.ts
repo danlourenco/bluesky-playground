@@ -1,7 +1,7 @@
 // Logout endpoint - clears the session
 import { redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getDefaultBlueskyService } from '$lib/server/bluesky';
+import { getBlueskyService } from '$lib/server/bluesky';
 
 export const GET: RequestHandler = async ({ cookies }) => {
 	console.log('Logging out user...');
@@ -11,8 +11,8 @@ export const GET: RequestHandler = async ({ cookies }) => {
 
 	if (sessionId) {
 		try {
-			// Get the Bluesky service instance
-			const bluesky = getDefaultBlueskyService();
+			// Get the singleton Bluesky service instance
+			const bluesky = getBlueskyService();
 			
 			// Logout user and clear session cookie
 			await bluesky.logout(sessionId, cookies);

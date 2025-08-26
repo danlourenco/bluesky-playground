@@ -2,7 +2,7 @@
 // Per atproto OAuth spec, localhost redirect URIs must be http://127.0.0.1/
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getDefaultBlueskyService } from '$lib/server/bluesky';
+import { getBlueskyService } from '$lib/server/bluesky';
 
 export const load: PageServerLoad = async ({ url, cookies }) => {
 	// Check if this is a REAL OAuth callback (must have both 'code' AND 'state' parameters)
@@ -21,8 +21,8 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 	console.log('Callback URL:', url.toString());
 
 	try {
-		// Get the Bluesky service instance (same one used by login and dashboard)
-		const bluesky = getDefaultBlueskyService();
+		// Get the singleton Bluesky service instance
+		const bluesky = getBlueskyService();
 
 		// Handle the OAuth callback using the refactored service
 		const result = await bluesky.handleOAuthCallback(url.toString(), cookies);

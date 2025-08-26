@@ -1,15 +1,15 @@
 // OAuth callback endpoint - handles OAuth response (following README example)
 import { redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getDefaultBlueskyService } from '$lib/server/bluesky';
+import { getBlueskyService } from '$lib/server/bluesky';
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
 	console.log('OAuth callback received at root');
 	console.log('Callback URL:', url.toString());
 
 	try {
-		// Get the Bluesky service instance (same one used by dashboard)
-		const bluesky = getDefaultBlueskyService();
+		// Get the singleton Bluesky service instance
+		const bluesky = getBlueskyService();
 
 		// Handle the OAuth callback using the refactored service
 		const result = await bluesky.handleOAuthCallback(url.toString(), cookies);
