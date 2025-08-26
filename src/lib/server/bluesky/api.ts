@@ -360,8 +360,9 @@ export class BlueskyAPIService {
         agent.getProfile({ actor })
       ]);
 
+      // Flatten structure to match template expectations (apiData.follows)
       const enrichedResponse: EnrichedFollowResponse = {
-        data: followsResponse.data,
+        ...followsResponse.data, // follows: [...], cursor: '...'
         profileTotals: {
           followsCount: profileResponse.data.followsCount,
           followersCount: profileResponse.data.followersCount,
@@ -427,8 +428,9 @@ export class BlueskyAPIService {
         agent.getProfile({ actor })
       ]);
 
+      // Flatten structure to match template expectations (apiData.followers)
       const enrichedResponse: EnrichedFollowResponse = {
-        data: followersResponse.data,
+        ...followersResponse.data, // followers: [...], cursor: '...'
         profileTotals: {
           followsCount: profileResponse.data.followsCount,
           followersCount: profileResponse.data.followersCount,
