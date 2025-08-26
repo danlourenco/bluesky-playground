@@ -118,40 +118,40 @@
 							</div>
 
 							<!-- Visual Feed Display -->
-							{#if data.demo === 'profile' && data.apiData.data}
+							{#if data.demo === 'profile' && data.apiData}
 								<div class="bg-white rounded-lg border p-6 mb-6">
 									<h3 class="text-lg font-semibold mb-4 text-gray-800">Profile Preview</h3>
 									<div class="flex items-start space-x-4">
 										<img 
-											src={data.apiData.data.avatar || 'https://via.placeholder.com/64x64/e5e7eb/9ca3af?text=?'} 
-											alt="{data.apiData.data.displayName || data.apiData.data.handle}'s avatar"
+											src={data.apiData.avatar || 'https://via.placeholder.com/64x64/e5e7eb/9ca3af?text=?'} 
+											alt="{data.apiData.displayName || data.apiData.handle}'s avatar"
 											class="w-16 h-16 rounded-full object-cover"
 										/>
 										<div class="flex-1">
 											<div class="flex items-center space-x-2">
-												<h4 class="text-xl font-bold text-gray-900">{data.apiData.data.displayName || data.apiData.data.handle}</h4>
-												{#if data.apiData.data.displayName}
-													<span class="text-gray-500">@{data.apiData.data.handle}</span>
+												<h4 class="text-xl font-bold text-gray-900">{data.apiData.displayName || data.apiData.handle}</h4>
+												{#if data.apiData.displayName}
+													<span class="text-gray-500">@{data.apiData.handle}</span>
 												{/if}
 											</div>
-											{#if data.apiData.data.description}
-												<p class="mt-2 text-gray-700">{data.apiData.data.description}</p>
+											{#if data.apiData.description}
+												<p class="mt-2 text-gray-700">{data.apiData.description}</p>
 											{/if}
 											<div class="flex space-x-6 mt-3 text-sm text-gray-600">
-												<div><span class="font-semibold text-gray-900">{data.apiData.data.followsCount || 0}</span> Following</div>
-												<div><span class="font-semibold text-gray-900">{data.apiData.data.followersCount || 0}</span> Followers</div>
-												<div><span class="font-semibold text-gray-900">{data.apiData.data.postsCount || 0}</span> Posts</div>
+												<div><span class="font-semibold text-gray-900">{data.apiData.followsCount || 0}</span> Following</div>
+												<div><span class="font-semibold text-gray-900">{data.apiData.followersCount || 0}</span> Followers</div>
+												<div><span class="font-semibold text-gray-900">{data.apiData.postsCount || 0}</span> Posts</div>
 											</div>
 										</div>
 									</div>
 								</div>
-							{:else if (data.demo === 'timeline' || data.demo === 'author-feed') && data.apiData.data?.feed}
+							{:else if (data.demo === 'timeline' || data.demo === 'author-feed') && data.apiData?.feed}
 								<div class="bg-white rounded-lg border mb-6">
 									<h3 class="text-lg font-semibold p-4 border-b text-gray-800">
 										{data.demo === 'timeline' ? 'Timeline Feed' : 'Author Posts'}
 									</h3>
 									<div class="divide-y">
-										{#each data.apiData.data.feed.slice(0, 5) as item}
+										{#each data.apiData.feed.slice(0, 5) as item}
 											<div class="hover:bg-gray-50">
 												<!-- Repost indicator -->
 												{#if item.reason?.$type === 'app.bsky.feed.defs#reasonRepost'}
@@ -259,19 +259,19 @@
 										</div>
 										{/each}
 									</div>
-									{#if data.apiData.data.feed.length > 5}
+									{#if data.apiData.feed.length > 5}
 										<div class="p-4 text-center text-gray-500 border-t">
-											Showing 5 of {data.apiData.data.feed.length} posts
+											Showing 5 of {data.apiData.feed.length} posts
 										</div>
 									{/if}
 								</div>
-							{:else if (data.demo === 'following' || data.demo === 'followers') && data.apiData.data}
+							{:else if (data.demo === 'following' || data.demo === 'followers') && data.apiData}
 								<div class="bg-white rounded-lg border mb-6">
 									<h3 class="text-lg font-semibold p-4 border-b text-gray-800">
 										{data.demo === 'following' ? 'Following' : 'Followers'}
 									</h3>
 									<div class="divide-y">
-										{#each (data.apiData.data.follows || data.apiData.data.followers || []).slice(0, 8) as user}
+										{#each (data.apiData.follows || data.apiData.followers || []).slice(0, 8) as user}
 											<div class="p-4 hover:bg-gray-50">
 												<div class="flex items-center space-x-3">
 													<img 
@@ -294,7 +294,7 @@
 									</div>
 									<div class="p-4 text-center text-gray-500 border-t space-y-1">
 										<div>
-											Showing 8 of {(data.apiData.data.follows || data.apiData.data.followers || []).length} users 
+											Showing 8 of {(data.apiData.follows || data.apiData.followers || []).length} users 
 											<span class="text-xs">(from API response)</span>
 										</div>
 										{#if data.apiData.profileTotals}
@@ -309,17 +309,17 @@
 										{/if}
 									</div>
 								</div>
-							{:else if data.demo === 'post-thread' && data.apiData.data?.thread}
+							{:else if data.demo === 'post-thread' && data.apiData?.thread}
 								<div class="bg-white rounded-lg border mb-6">
 									<h3 class="text-lg font-semibold p-4 border-b text-gray-800">Post Thread</h3>
 									<div class="p-4">
 										<!-- Main thread post -->
-										{#if data.apiData.data.thread.post}
+										{#if data.apiData.thread.post}
 											<div class="border-l-4 border-blue-500 pl-4 mb-4">
 												<div class="flex space-x-3">
 													<img 
-														src={data.apiData.data.thread.post.author.avatar || 'https://via.placeholder.com/48x48/e5e7eb/9ca3af?text=?'} 
-														alt="{data.apiData.data.thread.post.author.displayName || data.apiData.data.thread.post.author.handle}'s avatar"
+														src={data.apiData.thread.post.author.avatar || 'https://via.placeholder.com/48x48/e5e7eb/9ca3af?text=?'} 
+														alt="{data.apiData.thread.post.author.displayName || data.apiData.thread.post.author.handle}'s avatar"
 														class="w-12 h-12 rounded-full object-cover flex-shrink-0"
 													/>
 													<div class="flex-1 min-w-0">
@@ -329,19 +329,19 @@
 															</div>
 														</div>
 														<div class="flex items-center space-x-1">
-															<span class="font-semibold text-gray-900">{data.apiData.data.thread.post.author.displayName || data.apiData.data.thread.post.author.handle}</span>
-															<span class="text-gray-500">@{data.apiData.data.thread.post.author.handle}</span>
+															<span class="font-semibold text-gray-900">{data.apiData.thread.post.author.displayName || data.apiData.thread.post.author.handle}</span>
+															<span class="text-gray-500">@{data.apiData.thread.post.author.handle}</span>
 															<span class="text-gray-400">·</span>
 															<span class="text-gray-500 text-sm">
-																{new Date(data.apiData.data.thread.post.indexedAt).toLocaleDateString()}
+																{new Date(data.apiData.thread.post.indexedAt).toLocaleDateString()}
 															</span>
 														</div>
 														<div class="mt-1 text-gray-800 whitespace-pre-wrap break-words">
-															{data.apiData.data.thread.post.record.text}
+															{data.apiData.thread.post.record.text}
 														</div>
-														{#if data.apiData.data.thread.post.embed?.images}
+														{#if data.apiData.thread.post.embed?.images}
 															<div class="mt-3 grid grid-cols-2 gap-2 max-w-md">
-																{#each data.apiData.data.thread.post.embed.images as image}
+																{#each data.apiData.thread.post.embed.images as image}
 																	<img 
 																		src={image.thumb} 
 																		alt={image.alt || 'Post image'}
@@ -355,19 +355,19 @@
 																<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 																	<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
 																</svg>
-																<span class="text-sm">{data.apiData.data.thread.post.replyCount || 0}</span>
+																<span class="text-sm">{data.apiData.thread.post.replyCount || 0}</span>
 															</div>
 															<div class="flex items-center space-x-2">
 																<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 																	<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
 																</svg>
-																<span class="text-sm">{data.apiData.data.thread.post.repostCount || 0}</span>
+																<span class="text-sm">{data.apiData.thread.post.repostCount || 0}</span>
 															</div>
 															<div class="flex items-center space-x-2">
-																<svg class="w-5 h-5 {data.apiData.data.thread.post.viewer?.like ? 'text-red-500' : ''}" fill={data.apiData.data.thread.post.viewer?.like ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+																<svg class="w-5 h-5 {data.apiData.thread.post.viewer?.like ? 'text-red-500' : ''}" fill={data.apiData.thread.post.viewer?.like ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
 																	<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
 																</svg>
-																<span class="text-sm {data.apiData.data.thread.post.viewer?.like ? 'text-red-500' : ''}">{data.apiData.data.thread.post.likeCount || 0}</span>
+																<span class="text-sm {data.apiData.thread.post.viewer?.like ? 'text-red-500' : ''}">{data.apiData.thread.post.likeCount || 0}</span>
 															</div>
 														</div>
 													</div>
@@ -376,15 +376,15 @@
 										{/if}
 
 										<!-- Thread replies -->
-										{#if data.apiData.data.thread.replies && data.apiData.data.thread.replies.length > 0}
+										{#if data.apiData.thread.replies && data.apiData.thread.replies.length > 0}
 											<div class="space-y-4">
 												<h4 class="font-semibold text-gray-700 flex items-center space-x-2">
 													<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
 													</svg>
-													<span>Replies ({data.apiData.data.thread.replies.length})</span>
+													<span>Replies ({data.apiData.thread.replies.length})</span>
 												</h4>
-												{#each data.apiData.data.thread.replies.slice(0, 5) as reply}
+												{#each data.apiData.thread.replies.slice(0, 5) as reply}
 													{#if reply.post}
 														<div class="border-l-2 border-gray-200 pl-4 ml-4">
 															<div class="flex space-x-3">
@@ -454,9 +454,9 @@
 														</div>
 													{/if}
 												{/each}
-												{#if data.apiData.data.thread.replies.length > 5}
+												{#if data.apiData.thread.replies.length > 5}
 													<div class="text-center text-gray-500 text-sm">
-														... and {data.apiData.data.thread.replies.length - 5} more replies
+														... and {data.apiData.thread.replies.length - 5} more replies
 													</div>
 												{/if}
 											</div>
@@ -465,11 +465,11 @@
 										{/if}
 									</div>
 								</div>
-							{:else if data.demo === 'likes' && data.apiData.data?.feed}
+							{:else if data.demo === 'likes' && data.apiData?.feed}
 								<div class="bg-white rounded-lg border mb-6">
 									<h3 class="text-lg font-semibold p-4 border-b text-gray-800">Liked Posts</h3>
 									<div class="divide-y">
-										{#each data.apiData.data.feed.slice(0, 5) as item}
+										{#each data.apiData.feed.slice(0, 5) as item}
 											<div class="p-4 hover:bg-gray-50">
 												<div class="flex space-x-3">
 													<img 
@@ -529,15 +529,15 @@
 							</details>
 
 							<!-- Detailed Stats & Context -->
-							{#if data.demo === 'timeline' && data.apiData.data?.feed}
+							{#if data.demo === 'timeline' && data.apiData?.feed}
 								<div class="mt-4 p-3 bg-blue-50 rounded-md">
 									<p class="text-sm text-blue-900 font-semibold mb-1">
-										📊 Timeline Analysis ({data.apiData.data.feed.length} items)
+										📊 Timeline Analysis ({data.apiData.feed.length} items)
 									</p>
-									{#if data.apiData.data.feed.length > 0}
-										{@const reposts = data.apiData.data.feed.filter(item => item.reason?.$type === 'app.bsky.feed.defs#reasonRepost').length}
-										{@const replies = data.apiData.data.feed.filter(item => item.post.record?.reply).length}
-										{@const originalPosts = data.apiData.data.feed.length - reposts - replies}
+									{#if data.apiData.feed.length > 0}
+										{@const reposts = data.apiData.feed.filter(item => item.reason?.$type === 'app.bsky.feed.defs#reasonRepost').length}
+										{@const replies = data.apiData.feed.filter(item => item.post.record?.reply).length}
+										{@const originalPosts = data.apiData.feed.length - reposts - replies}
 										<div class="text-xs text-blue-800 space-y-1">
 											<div>• Original posts: {originalPosts}</div>
 											<div>• Reposts: {reposts} (posts you shared from others)</div>
@@ -545,15 +545,15 @@
 										</div>
 									{/if}
 								</div>
-							{:else if data.demo === 'author-feed' && data.apiData.data?.feed}
+							{:else if data.demo === 'author-feed' && data.apiData?.feed}
 								<div class="mt-4 p-3 bg-blue-50 rounded-md">
 									<p class="text-sm text-blue-900 font-semibold mb-1">
-										📊 Author Feed Analysis ({data.apiData.data.feed.length} items)
+										📊 Author Feed Analysis ({data.apiData.feed.length} items)
 									</p>
-									{#if data.apiData.data.feed.length > 0}
-										{@const reposts = data.apiData.data.feed.filter(item => item.reason?.$type === 'app.bsky.feed.defs#reasonRepost').length}
-										{@const replies = data.apiData.data.feed.filter(item => item.post.record?.reply).length}
-										{@const originalPosts = data.apiData.data.feed.length - reposts - replies}
+									{#if data.apiData.feed.length > 0}
+										{@const reposts = data.apiData.feed.filter(item => item.reason?.$type === 'app.bsky.feed.defs#reasonRepost').length}
+										{@const replies = data.apiData.feed.filter(item => item.post.record?.reply).length}
+										{@const originalPosts = data.apiData.feed.length - reposts - replies}
 										<div class="text-xs text-blue-800 space-y-1">
 											<div>• Your original posts: {originalPosts}</div>
 											<div>• Your reposts: {reposts} (why you see others' posts here!)</div>
@@ -562,42 +562,42 @@
 										</div>
 									{/if}
 								</div>
-							{:else if data.demo === 'likes' && data.apiData.data?.feed}
+							{:else if data.demo === 'likes' && data.apiData?.feed}
 								<div class="mt-4 p-3 bg-blue-50 rounded-md">
 									<p class="text-sm text-blue-900 font-semibold mb-1">
-										❤️ Liked Posts ({data.apiData.data.feed.length} items)
+										❤️ Liked Posts ({data.apiData.feed.length} items)
 									</p>
 									<div class="text-xs text-blue-800">
 										These are posts from other users that you've liked. They're sorted by when you liked them, not when they were originally posted.
 									</div>
 								</div>
-							{:else if data.demo === 'following' && data.apiData.data?.follows}
+							{:else if data.demo === 'following' && data.apiData?.follows}
 								<div class="mt-4 p-3 bg-blue-50 rounded-md">
 									<p class="text-sm text-blue-900 font-semibold mb-1">
 										👥 Following Analysis
 									</p>
 									<div class="text-xs text-blue-800 space-y-1">
-										<div>• API returned: {data.apiData.data.follows.length} users (limit: 20)</div>
+										<div>• API returned: {data.apiData.follows.length} users (limit: 20)</div>
 										{#if data.apiData.profileTotals}
 											<div>• <strong>Your actual total: {data.apiData.profileTotals.followsCount} following</strong></div>
 											<div class="italic">The difference shows this API is paginated - you'd need {Math.ceil(data.apiData.profileTotals.followsCount / 20)} API calls to get everyone.</div>
 										{/if}
 									</div>
 								</div>
-							{:else if data.demo === 'followers' && data.apiData.data?.followers}
+							{:else if data.demo === 'followers' && data.apiData?.followers}
 								<div class="mt-4 p-3 bg-blue-50 rounded-md">
 									<p class="text-sm text-blue-900 font-semibold mb-1">
 										👤 Followers Analysis
 									</p>
 									<div class="text-xs text-blue-800 space-y-1">
-										<div>• API returned: {data.apiData.data.followers.length} users (limit: 20)</div>
+										<div>• API returned: {data.apiData.followers.length} users (limit: 20)</div>
 										{#if data.apiData.profileTotals}
 											<div>• <strong>Your actual total: {data.apiData.profileTotals.followersCount} followers</strong></div>
 											<div class="italic">The difference shows this API is paginated - you'd need {Math.ceil(data.apiData.profileTotals.followersCount / 20)} API calls to get everyone.</div>
 										{/if}
 									</div>
 								</div>
-							{:else if data.demo === 'profile' && data.apiData.data}
+							{:else if data.demo === 'profile' && data.apiData}
 								<div class="mt-4 p-3 bg-blue-50 rounded-md">
 									<p class="text-sm text-blue-900 font-semibold mb-1">
 										👤 Profile Data
@@ -606,7 +606,7 @@
 										This shows your complete profile information as stored on the AT Protocol network, including metadata and verification status.
 									</div>
 								</div>
-							{:else if data.demo === 'post-thread' && data.apiData.data}
+							{:else if data.demo === 'post-thread' && data.apiData}
 								<div class="mt-4 p-3 bg-blue-50 rounded-md">
 									<p class="text-sm text-blue-900 font-semibold mb-1">
 										🧵 Thread Analysis
