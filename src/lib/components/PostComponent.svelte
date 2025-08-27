@@ -4,12 +4,15 @@
 	import PostQuote from './PostQuote.svelte';
 	import PostEngagement from './PostEngagement.svelte';
 	import PostRepostIndicator from './PostRepostIndicator.svelte';
+	import PostReplyIndicator from './PostReplyIndicator.svelte';
+	import PostReplyText from './PostReplyText.svelte';
 
 	// Props
 	export let post: any;
 	export let showCopyButton = true;
 	export let copyButtonId = 'copy-btn';
 	export let showRepostIndicator = true;
+	export let showReplyIndicator = true;
 
 	// Copy JSON to clipboard function
 	async function copyPostJson() {
@@ -60,8 +63,16 @@
 		<PostRepostIndicator reason={post.reason} />
 	{/if}
 	
+	<!-- Reply indicator -->
+	{#if showReplyIndicator}
+		<PostReplyIndicator 
+			reply={post.post?.record?.reply || post.reply} 
+			parentPost={post.parentPost || post.reply?.parent}
+		/>
+	{/if}
+	
 	<!-- Main post content -->
-	<div class="p-4 {showRepostIndicator && post.reason?.$type === 'app.bsky.feed.defs#reasonRepost' ? 'pt-0' : ''}">
+	<div class="p-4 {showRepostIndicator && post.reason?.$type === 'app.bsky.feed.defs#reasonRepost' ? 'pt-0' : ''} {showReplyIndicator && (post.post?.record?.reply || post.reply?.parent || post.parentPost) ? 'pt-2 ml-16' : ''}">
 		<div class="flex space-x-3">
 			<img 
 				src={post.post.author.avatar || 'https://via.placeholder.com/48x48/e5e7eb/9ca3af?text=?'} 
@@ -73,6 +84,15 @@
 					author={post.post.author}
 					timestamp={post.post.indexedAt || post.post.record?.createdAt || Date.now()}
 				/>
+				
+				<!-- Reply text indicator -->
+				{#if showReplyIndicator}
+					<PostReplyText 
+						reply={post.post?.record?.reply || post.reply} 
+						parentPost={post.parentPost || post.reply?.parent}
+					/>
+				{/if}
+				
 				<div class="mt-1 text-gray-800 whitespace-pre-wrap break-words">
 					{post.post.record?.text || ''}
 				</div>
