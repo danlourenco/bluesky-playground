@@ -4,12 +4,15 @@
 	import PostQuote from './PostQuote.svelte';
 	import PostEngagement from './PostEngagement.svelte';
 	import PostRepostIndicator from './PostRepostIndicator.svelte';
+	import PostReplyIndicator from './PostReplyIndicator.svelte';
+	import PostReplyText from './PostReplyText.svelte';
 
 	// Props
 	export let post: any;
 	export let showCopyButton = true;
 	export let copyButtonId = 'copy-btn';
 	export let showRepostIndicator = true;
+	export let showReplyIndicator = true;
 
 	// Copy JSON to clipboard function
 	async function copyPostJson() {
@@ -60,19 +63,28 @@
 		<PostRepostIndicator reason={post.reason} />
 	{/if}
 	
+	<!-- Reply indicator -->
+	{#if showReplyIndicator}
+		<PostReplyIndicator 
+			reply={post.reply} 
+			parentPost={post.parentPost}
+		/>
+	{/if}
+	
 	<!-- Main post content -->
 	<div class="p-4 {showRepostIndicator && post.reason?.$type === 'app.bsky.feed.defs#reasonRepost' ? 'pt-0' : ''}">
 		<div class="flex space-x-3">
 			<img 
 				src={post.post.author.avatar || 'https://via.placeholder.com/48x48/e5e7eb/9ca3af?text=?'} 
 				alt="{post.post.author.displayName || post.post.author.handle}'s avatar"
-				class="w-12 h-12 rounded-full object-cover flex-shrink-0"
+				class="w-10 h-10 rounded-full object-cover flex-shrink-0"
 			/>
 			<div class="flex-1 min-w-0">
 				<PostHeader 
 					author={post.post.author}
 					timestamp={post.post.indexedAt || post.post.record?.createdAt || Date.now()}
 				/>
+				
 				<div class="mt-1 text-gray-800 whitespace-pre-wrap break-words">
 					{post.post.record?.text || ''}
 				</div>

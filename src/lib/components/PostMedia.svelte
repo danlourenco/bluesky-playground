@@ -8,7 +8,7 @@
 	function setupVideo(videoElement: HTMLVideoElement, playlistUrl: string) {
 		console.log('Setting up video with playlist:', playlistUrl);
 		console.log('HLS supported:', Hls.isSupported());
-		
+
 		if (Hls.isSupported()) {
 			console.log('Using HLS.js for video playback');
 			const hls = new Hls({
@@ -17,14 +17,14 @@
 				maxBufferLength: 10,
 				maxMaxBufferLength: 30
 			});
-			
+
 			hls.loadSource(playlistUrl);
 			hls.attachMedia(videoElement);
-			
+
 			hls.on(Hls.Events.MANIFEST_PARSED, function () {
 				console.log('HLS manifest parsed, video ready to play');
 			});
-			
+
 			hls.on(Hls.Events.ERROR, function (event, data) {
 				console.error('HLS error:', event, data);
 				if (data.fatal) {
@@ -32,7 +32,7 @@
 					videoElement.src = playlistUrl;
 				}
 			});
-			
+
 			return {
 				destroy() {
 					hls.destroy();
@@ -56,20 +56,20 @@
 		{#if embed.images.length === 1}
 			{@const image = embed.images[0]}
 			<div class="max-w-md">
-				<img 
-					src={image.fullsize} 
+				<img
+					src={image.fullsize}
 					alt={image.alt || 'Post image'}
-					class="rounded-lg w-full h-auto"
+					class="h-auto w-full rounded-lg"
 					loading="lazy"
 				/>
 			</div>
 		{:else}
-			<div class="grid grid-cols-2 gap-2 max-w-md">
+			<div class="grid max-w-md grid-cols-2 gap-2">
 				{#each embed.images as image}
-					<img 
-						src={image.thumb} 
+					<img
+						src={image.thumb}
 						alt={image.alt || 'Post image'}
-						class="rounded-lg object-cover w-full h-32"
+						class="h-32 w-full rounded-lg object-cover"
 					/>
 				{/each}
 			</div>
@@ -80,17 +80,21 @@
 <!-- Video -->
 {#if embed?.$type === 'app.bsky.embed.video#view'}
 	{@const video = embed}
-	<div class="mt-3 relative rounded-lg overflow-hidden bg-black" style="aspect-ratio: {video.aspectRatio?.width || 16}/{video.aspectRatio?.height || 9}">
-		<video 
-			controls 
+	<div
+		class="relative mt-3 overflow-hidden rounded-lg bg-black"
+		style="aspect-ratio: {video.aspectRatio?.width || 16}/{video.aspectRatio?.height || 9}"
+	>
+		<video
+			controls
 			poster={video.thumbnail}
-			class="w-full h-full object-cover"
+			class="h-full w-full object-cover"
 			preload="metadata"
 			use:setupVideo={video.playlist}
 		>
-			<p class="text-white p-4 text-center">Loading video...</p>
+			<track kind="captions" src="" srclang="en" label="English captions" default />
+			<p class="p-4 text-center text-white">Loading video...</p>
 		</video>
-		<div class="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+		<div class="bg-opacity-60 absolute top-2 left-2 rounded bg-black px-2 py-1 text-xs text-white">
 			Video
 		</div>
 	</div>
