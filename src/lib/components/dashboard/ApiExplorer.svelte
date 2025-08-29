@@ -13,19 +13,42 @@
 
 <script lang="ts">
 	import { Icon, CodeBracket } from 'svelte-hero-icons';
+	import { navigating } from '$app/stores';
+	import { goto } from '$app/navigation';
+	import { createEventDispatcher } from 'svelte';
 	
 	export let demos: ApiDemo[];
 	export let currentDemo: string = '';
 	
-	let loadingDemo: string = '';
+	const dispatch = createEventDispatcher();
+	let optimisticDemo: string = '';
 	
-	// Handle click with loading state
-	function handleDemoClick(demoId: string) {
-		loadingDemo = demoId;
-		// The actual navigation happens via the href, but we show loading feedback
+	// Handle click with immediate optimistic feedback
+	function handleDemoClick(demoId: string, event: Event) {
+		event.preventDefault();
+		
+		// Immediately show this demo as active (optimistic UI)
+		optimisticDemo = demoId;
+		
+		// Dispatch event so parent can show skeleton
+		dispatch('demoSelected', { demoId });
+		
+		// Navigate to get SSR data
+		goto(`/dashboard?demo=${demoId}`, { 
+			keepFocus: true,
+			noScroll: true 
+		});
+	}
+	
+	// Determine which demo should appear active
+	$: activeDemo = optimisticDemo || currentDemo;
+	
+	// Clear optimistic state when navigation completes
+	$: if (!$navigating && optimisticDemo) {
+		// Small delay to prevent flashing
 		setTimeout(() => {
-			loadingDemo = '';
-		}, 100);
+			optimisticDemo = '';
+		}, 50);
 	}
 </script>
 
@@ -41,21 +64,21 @@
 		
 		<div class="space-y-2">
 			{#each demos as demo}
-				<a
-					href="/dashboard?demo={demo.id}"
-					on:click={() => handleDemoClick(demo.id)}
-					class="block p-3 rounded-lg transition-all relative {currentDemo === demo.id
+				<button
+					type="button"
+					on:click={(e) => handleDemoClick(demo.id, e)}
+					class="block w-full text-left p-3 rounded-lg transition-all relative {activeDemo === demo.id
 						? 'bg-primary text-primary-content'
-						: 'bg-base-200 hover:bg-base-300'} {loadingDemo === demo.id ? 'pointer-events-none opacity-75' : ''}"
+						: 'bg-base-200 hover:bg-base-300'} {$navigating && optimisticDemo === demo.id ? 'pointer-events-none' : ''}"
 				>
-					{#if loadingDemo === demo.id}
-						<div class="absolute inset-0 flex items-center justify-center">
+					{#if $navigating && optimisticDemo === demo.id}
+						<div class="absolute top-3 right-3">
 							<div class="loading loading-spinner loading-sm"></div>
 						</div>
 					{/if}
-					<div class="font-medium {loadingDemo === demo.id ? 'opacity-50' : ''}">{demo.name}</div>
-					<div class="text-sm opacity-70 {loadingDemo === demo.id ? 'opacity-30' : ''}">{demo.description}</div>
-				</a>
+					<div class="font-medium">{demo.name}</div>
+					<div class="text-sm opacity-70">{demo.description}</div>
+				</button>
 			{/each}
 		</div>
 	</div>

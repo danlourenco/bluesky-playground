@@ -23,42 +23,38 @@
 	import FeedDisplay from './FeedDisplay.svelte';
 	import UserListDisplay from './UserListDisplay.svelte';
 	import ApiExplanationAlert from './ApiExplanationAlert.svelte';
+	import ApiSkeleton from './ApiSkeleton.svelte';
 	import { Icon, ExclamationTriangle, ArrowLeft } from 'svelte-hero-icons';
+	import { navigating } from '$app/stores';
 
 	export let demos: ApiDemo[];
 	export let currentDemo: string = '';
 	export let apiData: any = null;
 	export let apiError: string = '';
 	export let copyPostJson: (postData: any, postIndex?: string | number) => Promise<void>;
+	export let optimisticDemo: string = '';
 
 	$: currentDemoName = demos.find(d => d.id === currentDemo)?.name || 'Unknown';
+	$: optimisticDemoName = demos.find(d => d.id === optimisticDemo)?.name || 'Unknown';
 	
-	// Track loading state
-	let isLoading = false;
-	let previousDemo = currentDemo;
+	// Determine what to show - optimistic demo takes priority
+	$: displayDemo = optimisticDemo || currentDemo;
+	$: displayDemoName = optimisticDemo ? optimisticDemoName : currentDemoName;
 	
-	// Watch for demo changes to show loading state
-	$: if (currentDemo !== previousDemo) {
-		previousDemo = currentDemo;
-		// Show loading for a brief moment to indicate change
-		isLoading = true;
-		setTimeout(() => {
-			isLoading = false;
-		}, 150);
-	}
+	// Show skeleton when navigating and we have optimistic state
+	$: showSkeleton = $navigating && optimisticDemo;
 </script>
 
 <div class="card bg-base-100 shadow-xl">
 	<div class="card-body">
 		<h2 class="card-title text-lg">
-			API Response: {currentDemoName}
+			API Response: {displayDemoName}
 		</h2>
 
-		{#if isLoading}
-			<!-- Loading State -->
-			<div class="flex items-center justify-center py-8" in:fade={{ duration: 200 }}>
-				<div class="loading loading-spinner loading-md"></div>
-				<span class="ml-2">Loading {currentDemoName}...</span>
+		{#if showSkeleton}
+			<!-- Optimistic skeleton loading -->
+			<div in:fade={{ duration: 150 }}>
+				<ApiSkeleton demoType={optimisticDemo} />
 			</div>
 		{:else if apiError}
 			<!-- Error Display -->
