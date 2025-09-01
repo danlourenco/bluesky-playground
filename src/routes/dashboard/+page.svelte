@@ -20,6 +20,14 @@
 	];
 
 
+	// Optimistic demo state
+	let optimisticDemo: string = '';
+	
+	// Handle demo selection from ApiExplorer
+	function handleDemoSelected(event: CustomEvent<{ demoId: string }>) {
+		optimisticDemo = event.detail.demoId;
+	}
+	
 	// Copy JSON to clipboard function
 	async function copyPostJson(postData: any, postIndex?: string | number) {
 		const jsonString = JSON.stringify(postData, null, 2);
@@ -57,14 +65,21 @@
 		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 			<!-- API Demo Selector -->
 			<div class="lg:col-span-1">
-				<ApiExplorer {demos} currentDemo={data.demo} />
+				<ApiExplorer {demos} currentDemo={data.demo} on:demoSelected={handleDemoSelected} />
 			</div>
 
 			<!-- API Response Display -->
 			<div class="lg:col-span-2">
 				{#key data.demo}
 					<div in:fade={{ duration: 200, delay: 100 }}>
-						<ApiResponseDisplay {demos} currentDemo={data.demo || ''} apiData={data.apiData} apiError={data.apiError || ''} {copyPostJson} />
+						<ApiResponseDisplay 
+							{demos} 
+							currentDemo={data.demo || ''} 
+							apiData={data.apiData} 
+							apiError={data.apiError || ''} 
+							{copyPostJson}
+							{optimisticDemo}
+						/>
 					</div>
 				{/key}
 			</div>

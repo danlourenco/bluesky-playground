@@ -40,6 +40,18 @@ graph TB
 
 ## 🔐 OAuth Flow Deep Dive
 
+### User Authentication Journey
+
+When a user clicks "Connect with Bluesky" on the login page, here's exactly what happens:
+
+1. **OAuth Client Creation**: Server creates an OAuth client with proper configuration and generates a secure authorization URL with PKCE parameters
+2. **Bluesky Authorization**: User is redirected to Bluesky to authorize this application and sign in with their credentials  
+3. **Authorization Code Return**: Bluesky redirects back to our callback with an authorization code
+4. **Token Exchange**: Server securely exchanges the authorization code for access and refresh tokens
+5. **API Access**: User can now explore various AT Protocol API endpoints with their authenticated session
+
+## 🔐 OAuth Flow Deep Dive
+
 ### The Complete Authentication Journey
 
 ```mermaid
@@ -620,6 +632,35 @@ After exploring this application, developers will understand:
 - [ ] Add caching for frequently accessed data
 - [ ] Consider implementing refresh token rotation
 - [ ] Add monitoring and analytics
+
+## 🔧 Technical Implementation Summary
+
+### OAuth Configuration & Security Features
+
+**OAuth Flow**: Authorization Code with PKCE (Proof Key for Code Exchange)  
+**Authentication Method**: Private Key JWT (private_key_jwt)  
+**Token Storage**: Server-side sessions with automatic refresh handling  
+**Security Features**: DPoP (Demonstrating Proof of Possession), HTTPOnly cookies, CSRF protection via state parameter  
+**Libraries Used**: @atproto/oauth-client-node, @atproto/api  
+**Client Type**: Backend service (not native app or SPA)
+
+### OAuth Requirements Compliance
+
+✅ **Client Metadata**: Hosted at `/client-metadata.json` endpoint  
+✅ **JWKS Endpoint**: Available at `/jwks.json` for JWT verification  
+✅ **PKCE Support**: Proof Key for Code Exchange implemented  
+✅ **DPoP Enabled**: Demonstrating Proof of Possession for enhanced security  
+✅ **Token Refresh**: Automatic refresh token handling  
+✅ **Session Management**: Secure server-side session storage and management
+
+### Authentication Flow Endpoints
+
+- `GET /auth/login` - Initiates OAuth flow with optional handle pre-fill
+- `GET /auth/callback` - Handles OAuth callback and token exchange
+- `GET /client-metadata.json` - OAuth client metadata
+- `GET /jwks.json` - JSON Web Key Set for verification
+
+This implementation follows OAuth 2.1 best practices and AT Protocol specifications for maximum security and compliance.
 
 ---
 
