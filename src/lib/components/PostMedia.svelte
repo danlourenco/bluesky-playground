@@ -127,7 +127,7 @@
 					</div>
 				{/if}
 				<div class="text-xs text-blue-600 mt-2">
-					{(() => {
+					{@const hostname = (() => {
 						try {
 							return new URL(external.uri).hostname;
 						} catch (e) {
@@ -135,6 +135,7 @@
 							return external.uri;
 						}
 					})()}
+					{hostname}
 				</div>
 			</div>
 		</a>
@@ -163,15 +164,16 @@
 					{external.description}
 				</div>
 			{/if}
+			{@const hostname = (() => {
+				try {
+					return new URL(external.uri).hostname;
+				} catch (e) {
+					console.error('Invalid URL:', external.uri, e);
+					return external.uri;
+				}
+			})()}
 			<div class="text-xs text-blue-600 mt-2">
-				{(() => {
-					try {
-						return new URL(external.uri).hostname;
-					} catch (e) {
-						console.error('Invalid URL:', external.uri, e);
-						return external.uri;
-					}
-				})()}
+				{hostname}
 			</div>
 		</div>
 	</a>

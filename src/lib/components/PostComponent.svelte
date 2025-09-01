@@ -89,12 +89,23 @@
 					{post.post.record?.text || ''}
 				</div>
 				
-				<!-- Post media -->
-				<PostMedia embed={post.post.embed} />
-				
-				<!-- Quote post -->
-				{#if post.post.embed?.$type === 'app.bsky.embed.record#view' && post.post.embed.record}
-					<PostQuote quotedPost={post.post.embed.record} />
+				<!-- Handle different embed types -->
+				{#if post.post.embed}
+					{#if post.post.embed.$type === 'app.bsky.embed.recordWithMedia#view'}
+						<!-- Combined media + quote post -->
+						<PostMedia embed={post.post.embed.media} />
+						{#if post.post.embed.record?.record}
+							<PostQuote quotedPost={post.post.embed.record.record} />
+						{/if}
+					{:else if post.post.embed.$type === 'app.bsky.embed.record#view'}
+						<!-- Quote post only -->
+						{#if post.post.embed.record}
+							<PostQuote quotedPost={post.post.embed.record} />
+						{/if}
+					{:else}
+						<!-- Regular media (images, video, external links) -->
+						<PostMedia embed={post.post.embed} />
+					{/if}
 				{/if}
 				
 				<!-- Engagement stats -->
