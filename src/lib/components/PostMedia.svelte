@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Hls from 'hls.js';
+	import LinkPreview from './LinkPreview.svelte';
 
 	// Props
 	export let embed: any;
@@ -101,80 +102,9 @@
 {/if}
 
 <!-- External links -->
-{#if embed?.$type === 'app.bsky.embed.external#view'}
-	{@const external = embed.external}
+{#if embed?.$type === 'app.bsky.embed.external#view' || embed?.external}
+	{@const external = embed?.$type === 'app.bsky.embed.external#view' ? embed.external : embed.external}
 	{#if external}
-		<a 
-			href={external.uri} 
-			target="_blank" 
-			rel="noopener noreferrer"
-			class="mt-3 block border border-base-300 rounded-lg overflow-hidden hover:bg-base-50 transition-colors"
-		>
-			{#if external.thumb}
-				<img 
-					src={external.thumb} 
-					alt={external.title || 'Link preview'}
-					class="w-full h-48 object-cover"
-				/>
-			{/if}
-			<div class="p-3">
-				<div class="text-sm font-semibold text-base-content line-clamp-2">
-					{external.title || 'Untitled'}
-				</div>
-				{#if external.description}
-					<div class="text-xs text-base-content/70 mt-1 line-clamp-2">
-						{external.description}
-					</div>
-				{/if}
-				<div class="text-xs text-blue-600 mt-2">
-					{@const hostname = (() => {
-						try {
-							return new URL(external.uri).hostname;
-						} catch (e) {
-							console.error('Invalid URL:', external.uri, e);
-							return external.uri;
-						}
-					})()}
-					{hostname}
-				</div>
-			</div>
-		</a>
+		<LinkPreview {external} />
 	{/if}
-{:else if embed?.external}
-	{@const external = embed.external}
-	<a 
-		href={external.uri} 
-		target="_blank" 
-		rel="noopener noreferrer"
-		class="mt-3 block border border-base-300 rounded-lg overflow-hidden hover:bg-base-50 transition-colors"
-	>
-		{#if external.thumb}
-			<img 
-				src={external.thumb} 
-				alt={external.title || 'Link preview'}
-				class="w-full h-48 object-cover"
-			/>
-		{/if}
-		<div class="p-3">
-			<div class="text-sm font-semibold text-base-content line-clamp-2">
-				{external.title || 'Untitled'}
-			</div>
-			{#if external.description}
-				<div class="text-xs text-base-content/70 mt-1 line-clamp-2">
-					{external.description}
-				</div>
-			{/if}
-			{@const hostname = (() => {
-				try {
-					return new URL(external.uri).hostname;
-				} catch (e) {
-					console.error('Invalid URL:', external.uri, e);
-					return external.uri;
-				}
-			})()}
-			<div class="text-xs text-blue-600 mt-2">
-				{hostname}
-			</div>
-		</div>
-	</a>
 {/if}

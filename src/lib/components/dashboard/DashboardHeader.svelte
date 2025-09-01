@@ -16,11 +16,11 @@
 	<div class="card-body">
 		<div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
 			<!-- Title and Status -->
-			<div>
+			<div class="text-center lg:text-left">
 				<h1 class="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
 					Bluesky Dashboard
 				</h1>
-				<div class="flex items-center gap-2 mt-2">
+				<div class="flex items-center justify-center lg:justify-start gap-2 mt-2">
 					<div class="badge badge-success gap-1">
 						<div class="w-2 h-2 bg-success rounded-full animate-pulse"></div>
 						Connected
