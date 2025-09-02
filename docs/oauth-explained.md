@@ -301,9 +301,9 @@ This means `alice.bsky.social` and `bob.custom-domain.com` can both use your app
 **Traditional OAuth - Bearer Tokens:**
 ```mermaid
 graph LR
-    A[😈 Attacker intercepts token] --> B[🔓 "Bearer abc123"]
+    A[😈 Attacker intercepts token] --> B[🔓 Bearer token abc123]
     B --> C[📊 API Server]
-    C --> D[✅ Token valid → Access granted]
+    C --> D[✅ Token valid - Access granted]
     
     style A fill:#ffebee
     style D fill:#ffebee
@@ -312,7 +312,7 @@ graph LR
 **AT Protocol - DPoP Tokens:**
 ```mermaid
 graph LR
-    A[😈 Attacker intercepts token] --> B[🔒 "DPoP abc123" + JWT proof]
+    A[😈 Attacker intercepts token] --> B[🔒 DPoP token + JWT proof]
     B --> C{Has private key?}
     C -->|❌ No| D[❌ Access denied]
     C -->|✅ Yes| E[✅ Access granted]
