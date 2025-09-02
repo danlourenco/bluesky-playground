@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { Icon, CheckCircle, XCircle, ArrowRightOnRectangle } from 'svelte-hero-icons';
+	import { Icon, CheckCircle, XCircle, ArrowRightOnRectangle, Sparkles, ShieldCheck, CodeBracket } from 'svelte-hero-icons';
 	import Avatar from '$lib/components/Avatar.svelte';
 	import type { PageData } from './$types';
 	
@@ -10,8 +10,11 @@
 	// Get error state from server load function
 	const hasError = data.hasError;
 	
-	// Handle for pre-filling the OAuth login (optional)
+	// Handle for pre-filling the OAuth login (required)
 	let handle = '';
+	
+	// Validation state
+	$: isValidHandle = handle.trim().length > 0;
 	
 	// Handle OAuth success redirect
 	onMount(() => {
@@ -24,19 +27,23 @@
 	});
 </script>
 
-<div class="min-h-screen bg-gradient-to-br from-primary/10 via-base-100 to-secondary/10 flex items-center justify-center p-4" data-theme="light">
-	<div class="w-full max-w-md">
-		<!-- Main Card -->
-		<div class="card bg-base-100 shadow-2xl">
+<div class="hero min-h-screen bg-gradient-to-br from-primary to-secondary" data-theme="corporate">
+	<div class="hero-overlay bg-opacity-60"></div>
+	<div class="hero-content text-center">
+		<div class="max-w-md">
+			<!-- Main Card -->
+			<div class="card bg-base-100 shadow-2xl">
 			<div class="card-body p-8">
 				<!-- Logo/Title -->
-				<div class="text-center mb-6">
-					<div class="flex justify-center mb-4">
-						<Avatar placeholder="🦋" size="md" />
+				<div class="text-center mb-8">
+					<div class="flex justify-center mb-6">
+						<Avatar placeholder="🦋" size="xl" />
 					</div>
-					<h1 class="card-title text-2xl justify-center mb-2">Bluesky Playground</h1>
-					<p class="text-base-content/70">
-						Connect your Bluesky account to explore the AT Protocol
+					<h1 class="card-title text-4xl font-bold text-primary justify-center mb-3">
+						Bluesky Playground
+					</h1>
+					<p class="text-base-content/70 text-lg">
+						Explore the decentralized social web
 					</p>
 				</div>
 
@@ -56,10 +63,9 @@
 
 				<!-- OAuth Login Form -->
 				<form action="/auth/login" method="GET" class="space-y-6">
-					<div class="form-control w-full">
-						<label class="label" for="handle">
-							<span class="label-text">Bluesky Handle</span>
-							<span class="label-text-alt text-base-content/50">Optional</span>
+					<div class="form-control w-full text-left">
+						<label class="label justify-start" for="handle">
+							<span class="label-text font-medium text-base">Bluesky Handle</span>
 						</label>
 						<input
 							type="text"
@@ -67,50 +73,63 @@
 							name="handle"
 							bind:value={handle}
 							placeholder="username.bsky.social"
-							class="input input-bordered w-full focus:input-primary"
+							class="input input-bordered input-lg w-full focus:input-primary {!isValidHandle && handle.length > 0 ? 'input-error' : ''}"
+							required
 						/>
-						<label class="label">
-							<span class="label-text-alt text-base-content/60">Pre-fill your handle or leave blank</span>
+						<label class="label justify-start">
+							<span class="label-text-alt text-base-content/60">Enter your Bluesky handle (e.g., alice.bsky.social)</span>
 						</label>
 					</div>
 
-					<button type="submit" class="btn btn-primary btn-lg w-full">
+					<button type="submit" class="btn btn-primary btn-lg btn-block" disabled={!isValidHandle}>
 						<Icon src={ArrowRightOnRectangle} class="w-5 h-5" />
 						Connect with Bluesky
 					</button>
 				</form>
 
-				<!-- Simple Explanation -->
-				<div class="divider">What happens next</div>
+				<!-- Features grid -->
+				<div class="divider">Why Bluesky Playground?</div>
 				
-				<div class="space-y-3">
-					<div class="flex items-center space-x-3">
-						<div class="badge badge-primary badge-sm">1</div>
-						<span class="text-sm text-base-content/80">You'll be redirected to Bluesky to sign in</span>
+				<div class="stats stats-vertical lg:stats-horizontal shadow w-full">
+					<div class="stat place-items-center py-4">
+						<div class="stat-figure text-success">
+							<Icon src={ShieldCheck} class="w-8 h-8" />
+						</div>
+						<div class="stat-title text-xs">Secure OAuth</div>
+						<div class="stat-desc text-xs">Industry standard</div>
 					</div>
-					<div class="flex items-center space-x-3">
-						<div class="badge badge-primary badge-sm">2</div>
-						<span class="text-sm text-base-content/80">Authorize this app to access your account</span>
+					
+					<div class="stat place-items-center py-4">
+						<div class="stat-figure text-secondary">
+							<Icon src={Sparkles} class="w-8 h-8" />
+						</div>
+						<div class="stat-title text-xs">Developer Tools</div>
+						<div class="stat-desc text-xs">Explore & build</div>
 					</div>
-					<div class="flex items-center space-x-3">
-						<div class="badge badge-primary badge-sm">3</div>
-						<span class="text-sm text-base-content/80">Return here to explore the AT Protocol APIs</span>
+					
+					<div class="stat place-items-center py-4">
+						<div class="stat-figure text-primary">
+							<Icon src={CodeBracket} class="w-8 h-8" />
+						</div>
+						<div class="stat-title text-xs">Open Source</div>
+						<div class="stat-desc text-xs">MIT licensed</div>
 					</div>
 				</div>
 
 			</div>
 		</div>
 
-		<!-- Technical Documentation Link -->
-		<div class="mt-6 text-center">
-			<div class="card bg-base-200/50">
-				<div class="card-body py-4 px-6">
-					<p class="text-sm text-base-content/70 mb-2">
+			<!-- Technical Documentation Link -->
+			<div class="card bg-base-200 shadow-xl mt-6">
+				<div class="card-body p-4">
+					<p class="text-sm text-base-content/70">
 						For developers: Learn how OAuth with Bluesky works
 					</p>
-					<a href="/README_OAUTH.md" target="_blank" class="link link-primary text-sm font-medium">
-						View Technical Documentation →
-					</a>
+					<div class="card-actions justify-center">
+						<a href="https://github.com/danlourenco/bluesky-playground/blob/main/README_OAUTH.md" target="_blank" class="link link-primary">
+							View Technical Documentation →
+						</a>
+					</div>
 				</div>
 			</div>
 		</div>

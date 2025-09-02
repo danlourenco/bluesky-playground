@@ -2,3 +2,34 @@
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
 @plugin 'daisyui';
+
+/* Ensure all interactive elements have pointer cursor */
+.btn,
+button,
+a,
+.link,
+[role="button"],
+[type="button"],
+[type="submit"],
+[type="reset"],
+.card:hover,
+.stat:hover,
+label:has(input[type="checkbox"]),
+label:has(input[type="radio"]),
+.dropdown-toggle,
+.tab,
+.collapse-title,
+.menu li > *,
+.navbar a,
+.breadcrumbs a,
+.pagination button,
+.pagination a,
+.steps .step,
+.toggle,
+.checkbox,
+.radio,
+.range,
+.rating input,
+.avatar:hover {
+  cursor: pointer;
+}
