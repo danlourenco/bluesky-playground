@@ -25,12 +25,12 @@ Think of OAuth like a hotel key card system:
 ```mermaid
 graph TB
     A[👤 You<br/>Hotel Guest] -->|1. Request cleaning| C[🧹 Housekeeping Service<br/>Third-party App]
-    C -->|2. "I need access to<br/>this guest's room"| B[🏨 Hotel Front Desk<br/>Authorization Server]
-    B -->|3. "Is this OK?"| A
-    A -->|4. "Yes, allow"| B
+    C -->|2. Need room access| B[🏨 Hotel Front Desk<br/>Authorization Server]
+    B -->|3. Ask permission| A
+    A -->|4. Grant permission| B
     B -->|5. Issue key card| D[🎫 Temporary Key Card<br/>Access Token]
-    D -->|6. Use to access| E[🚪 Your Hotel Room<br/>Your Data]
-    C -->|7. Gets key card| D
+    D -->|6. Access room| E[🚪 Your Hotel Room<br/>Your Data]
+    C -->|7. Receive key| D
     E -->|8. Clean room| C
     
     style A fill:#e1f5fe
