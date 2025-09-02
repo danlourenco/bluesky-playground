@@ -178,7 +178,7 @@ graph TB
     E --> F[Hash verifier → challenge]
     F --> G[Send challenge in auth request]
     G --> H[Send verifier in token request]
-    H --> I[✅ Server verifies: hash(verifier) = challenge]
+    H --> I[✅ Server verifies hash matches]
     
     style A fill:#fff3e0
     style C fill:#e8f5e8
